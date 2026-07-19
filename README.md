@@ -46,6 +46,12 @@ infra/      nginx reverse-proxy config
   `/api/dashboard/realtime` (online drivers with live position and current order),
   both admin/dispatcher only. Dashboard page shows the overview as a stat-tile grid,
   auto-refreshing every 15 seconds.
+- **Reports** — `/api/reports/{deliveries,drivers,performance}`, each renderable as
+  JSON, CSV (`?export=csv`), or PDF (`?export=pdf`, via Prawn). Deliveries is a daily
+  breakdown over a date range; drivers ranks by completed deliveries with average
+  delivery time and revenue; performance is a fleet-wide summary including on-time
+  rate. Reports page has a tab per report with a live table and CSV/PDF download
+  buttons that stream the authenticated response as a file.
 
 ## Prerequisites
 
@@ -116,6 +122,10 @@ GET    /api/tracking/history/:order_id
 
 GET    /api/dashboard/overview
 GET    /api/dashboard/realtime
+
+GET    /api/reports/deliveries    (?from=&to=&export=csv|pdf)
+GET    /api/reports/drivers       (?export=csv|pdf)
+GET    /api/reports/performance   (?export=csv|pdf)
 ```
 
 ## Frontend

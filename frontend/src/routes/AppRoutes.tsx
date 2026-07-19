@@ -9,6 +9,7 @@ import { VehiclesPage } from "../pages/VehiclesPage";
 import { OrdersPage } from "../pages/OrdersPage";
 import { TrackingPage } from "../pages/TrackingPage";
 import { DashboardPage } from "../pages/DashboardPage";
+import { ReportsPage } from "../pages/ReportsPage";
 
 export function AppRoutes() {
   return (
@@ -23,7 +24,7 @@ export function AppRoutes() {
           <Route path="/vehicles" element={<VehiclesPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/tracking" element={<TrackingPage />} />
-          <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
           <Route path="/profile" element={<PlaceholderPage title="Profile" />} />
         </Route>

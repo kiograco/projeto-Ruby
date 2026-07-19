@@ -22,6 +22,10 @@ Rails.application.routes.draw do
 
     get "dashboard/overview", to: "dashboard#overview"
     get "dashboard/realtime", to: "dashboard#realtime"
+
+    get "reports/deliveries", to: "reports#deliveries"
+    get "reports/drivers", to: "reports#drivers"
+    get "reports/performance", to: "reports#performance"
   end
 
   mount ActionCable.server => "/cable"
