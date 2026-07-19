@@ -15,6 +15,7 @@ class OrderSerializer
       pickup_address: AddressSerializer.new(order.pickup_address).as_json,
       delivery_address: AddressSerializer.new(order.delivery_address).as_json,
       order_items: order.order_items.map { |item| OrderItemSerializer.new(item).as_json },
+      proof_of_delivery_url: proof_of_delivery_url,
       created_at: order.created_at.iso8601
     }
   end
@@ -22,4 +23,10 @@ class OrderSerializer
   private
 
   attr_reader :order
+
+  def proof_of_delivery_url
+    return nil unless order.proof_of_delivery.attached?
+
+    Rails.application.routes.url_helpers.rails_blob_url(order.proof_of_delivery)
+  end
 end

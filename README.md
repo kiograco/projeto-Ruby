@@ -30,12 +30,18 @@ infra/      nginx reverse-proxy config
 - **Drivers** — full CRUD (`/api/drivers`); creating a driver also creates its underlying
   user account (role `driver`) atomically. Drivers can see and manage their own record;
   admin/dispatcher see all. Dashboard page assigns a vehicle and status per driver.
+  Admins can attach driver documents (license, background check, etc.) via
+  `POST /api/drivers/:id/documents` (Active Storage), managed from a Documents panel
+  on the Drivers page.
 - **Orders** — `/api/orders` with nested pickup/delivery addresses and line items created
   in one request, a validated status flow (pending → assigned → picked_up → in_transit →
   near_destination → delivered, with cancelled/failed as terminal off-ramps — invalid
   transitions are rejected), and role-scoped access: admin/dispatcher manage everything,
   drivers see and progress only their assigned orders, customer-role users can create
   orders. Dashboard page filters by status, assigns drivers, and drives status transitions.
+  A proof-of-delivery file can be attached per order (`POST /api/orders/:id/proof_of_delivery`,
+  Active Storage) by the assigned driver or admin/dispatcher, uploaded and viewed from the
+  order's History panel.
 - **Live tracking** — drivers post GPS coordinates to `/api/tracking/location`, which
   updates the driver's current position and broadcasts the point over ActionCable
   (`DeliveryTrackingChannel`, authenticated via a JWT passed as a `?token=` query param
@@ -165,6 +171,10 @@ PUT    /api/notifications/:id     (marks read)
 POST   /api/notifications/mark_all_read
 
 GET    /api/orders/:id/timeline   (audit trail: created, driver assigned, status changes)
+POST   /api/orders/:id/proof_of_delivery   (multipart file upload)
+
+POST   /api/drivers/:id/documents                (multipart file upload)
+DELETE /api/drivers/:id/documents/:document_id
 ```
 
 ## Frontend
@@ -219,8 +229,12 @@ re-read of the spec against the codebase found these remaining gaps:
 - [ ] Scheduled jobs — `DeliveryDelayJob` (flags orders past `estimated_delivery_at`)
       and `CleanupLogsJob` (prunes old read notifications) exist and are tested, but
       nothing triggers them on a recurring schedule yet (no `sidekiq-cron` wiring)
-- [ ] File storage / attachments — proof of delivery photos, driver documents,
-      invoices (Section 16); `ActiveStorage` is configured but unused
+- [ ] Invoice attachments (Section 16 also lists these alongside proof of delivery
+      and driver documents, both of which are now built); Active Storage runs on the
+      local Disk service in dev — swapping to S3/MinIO for production is a
+      `storage.yml`-only config change, not yet made
+- [ ] Active Storage variant/thumbnail generation for uploaded images — files
+      are stored and served as-is, no resizing
 - [ ] OpenAPI/Swagger documentation for the API (Section 29)
 - [ ] ETA on the tracking map (Section 13) — only straight-line distance is shown today,
       not a time estimate

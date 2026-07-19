@@ -57,6 +57,7 @@ export interface Order {
   pickup_address: Address;
   delivery_address: Address;
   order_items: OrderItem[];
+  proof_of_delivery_url: string | null;
   created_at: string;
 }
 
@@ -109,4 +110,13 @@ export interface OrderTimelineEvent {
 export async function fetchOrderTimeline(id: number): Promise<OrderTimelineEvent[]> {
   const { data } = await apiClient.get<{ events: OrderTimelineEvent[] }>(`/orders/${id}/timeline`);
   return data.events;
+}
+
+export async function uploadProofOfDelivery(id: number, file: File): Promise<Order> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await apiClient.post<Order>(`/orders/${id}/proof_of_delivery`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
 }

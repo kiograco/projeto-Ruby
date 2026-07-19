@@ -2,6 +2,12 @@ import { apiClient } from "./client";
 import type { PagyMeta } from "./customers";
 import type { Vehicle } from "./vehicles";
 
+export interface DriverDocument {
+  id: number;
+  filename: string;
+  url: string;
+}
+
 export interface Driver {
   id: number;
   name: string;
@@ -11,6 +17,7 @@ export interface Driver {
   current_latitude: number | null;
   current_longitude: number | null;
   vehicle: Vehicle | null;
+  documents: DriverDocument[];
 }
 
 export interface DriversResponse {
@@ -50,4 +57,18 @@ export async function updateDriver(id: number, input: DriverUpdateInput): Promis
 
 export async function deleteDriver(id: number): Promise<void> {
   await apiClient.delete(`/drivers/${id}`);
+}
+
+export async function uploadDriverDocument(id: number, file: File): Promise<Driver> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await apiClient.post<Driver>(`/drivers/${id}/documents`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+export async function deleteDriverDocument(id: number, documentId: number): Promise<Driver> {
+  const { data } = await apiClient.delete<Driver>(`/drivers/${id}/documents/${documentId}`);
+  return data;
 }

@@ -12,11 +12,22 @@ class DriverSerializer
       status: driver.status,
       current_latitude: driver.current_latitude&.to_f,
       current_longitude: driver.current_longitude&.to_f,
-      vehicle: driver.vehicle && VehicleSerializer.new(driver.vehicle).as_json
+      vehicle: driver.vehicle && VehicleSerializer.new(driver.vehicle).as_json,
+      documents: documents
     }
   end
 
   private
 
   attr_reader :driver
+
+  def documents
+    driver.documents.map do |document|
+      {
+        id: document.id,
+        filename: document.filename.to_s,
+        url: Rails.application.routes.url_helpers.rails_blob_url(document)
+      }
+    end
+  end
 end

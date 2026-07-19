@@ -120,4 +120,48 @@ RSpec.describe "Api::Drivers", type: :request do
       expect(response).to have_http_status(:no_content)
     end
   end
+
+  describe "POST /api/drivers/:id/documents" do
+    let(:file) { fixture_file_upload("driver_license.pdf", "application/pdf") }
+
+    it "attaches a document as admin" do
+      driver = create(:driver)
+
+      post "/api/drivers/#{driver.id}/documents", params: { file: file }, headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:created)
+      expect(driver.documents.reload).to be_one
+      body = JSON.parse(response.body)
+      expect(body["documents"].first["filename"]).to eq("driver_license.pdf")
+    end
+
+    it "forbids a dispatcher from uploading a driver document" do
+      driver = create(:driver)
+
+      post "/api/drivers/#{driver.id}/documents", params: { file: file }, headers: auth_headers(dispatcher)
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "rejects a request with no file" do
+      driver = create(:driver)
+
+      post "/api/drivers/#{driver.id}/documents", headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+  end
+
+  describe "DELETE /api/drivers/:id/documents/:document_id" do
+    it "removes the attached document as admin" do
+      driver = create(:driver)
+      driver.documents.attach(fixture_file_upload("driver_license.pdf", "application/pdf"))
+      document_id = driver.documents.first.id
+
+      delete "/api/drivers/#{driver.id}/documents/#{document_id}", headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:ok)
+      expect(driver.documents.reload).to be_empty
+    end
+  end
 end

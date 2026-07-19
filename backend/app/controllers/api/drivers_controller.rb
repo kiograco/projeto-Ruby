@@ -1,7 +1,7 @@
 module Api
   class DriversController < ApplicationController
     before_action :authenticate_user!
-    before_action :set_driver, only: [ :show, :update, :destroy ]
+    before_action :set_driver, only: [ :show, :update, :destroy, :create_document, :destroy_document ]
 
     def index
       authorize Driver
@@ -42,6 +42,21 @@ module Api
       authorize @driver
       @driver.destroy!
       head :no_content
+    end
+
+    def create_document
+      authorize @driver, :update?
+      return render json: { errors: [ "file is required" ] }, status: :unprocessable_content if params[:file].blank?
+
+      @driver.documents.attach(params[:file])
+      render json: DriverSerializer.new(@driver.reload).as_json, status: :created
+    end
+
+    def destroy_document
+      authorize @driver, :update?
+      document = @driver.documents.find(params[:document_id])
+      document.purge
+      render json: DriverSerializer.new(@driver.reload).as_json
     end
 
     private

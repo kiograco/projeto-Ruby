@@ -6,6 +6,7 @@ class Driver < ApplicationRecord
   belongs_to :vehicle, optional: true
   has_many :orders, dependent: :nullify
   has_many :tracking_points, dependent: :destroy
+  has_many_attached :documents
 
   validates :license_number, presence: true, uniqueness: true
   validate :user_has_driver_role

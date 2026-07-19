@@ -1,7 +1,7 @@
 module Api
   class OrdersController < ApplicationController
     before_action :authenticate_user!
-    before_action :set_order, only: [ :show, :update, :destroy, :timeline ]
+    before_action :set_order, only: [ :show, :update, :destroy, :timeline, :proof_of_delivery ]
 
     def index
       authorize Order
@@ -61,6 +61,14 @@ module Api
       authorize @order, :show?
       logs = AuditLog.for_resource(@order).recent_first
       render json: { events: logs.map { |log| AuditLogSerializer.new(log).as_json } }
+    end
+
+    def proof_of_delivery
+      authorize @order, :update?
+      return render json: { errors: [ "file is required" ] }, status: :unprocessable_content if params[:file].blank?
+
+      @order.proof_of_delivery.attach(params[:file])
+      render json: OrderSerializer.new(@order.reload).as_json
     end
 
     private

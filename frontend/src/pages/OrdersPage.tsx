@@ -60,7 +60,7 @@ export function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
-  const [timelineOrderId, setTimelineOrderId] = useState<number | null>(null);
+  const [timelineOrder, setTimelineOrder] = useState<Order | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["orders", page, statusFilter],
@@ -207,7 +207,7 @@ export function OrdersPage() {
                       <td className="space-x-2 px-4 py-2 text-right">
                         <button
                           type="button"
-                          onClick={() => setTimelineOrderId(order.id)}
+                          onClick={() => setTimelineOrder(order)}
                           className="text-gray-500 hover:underline"
                         >
                           History
@@ -285,8 +285,12 @@ export function OrdersPage() {
         />
       )}
 
-      {timelineOrderId !== null && (
-        <OrderTimelinePanel orderId={timelineOrderId} onClose={() => setTimelineOrderId(null)} />
+      {timelineOrder && (
+        <OrderTimelinePanel
+          order={data?.orders.find((candidate) => candidate.id === timelineOrder.id) ?? timelineOrder}
+          canUploadProof={canManage || isDriver}
+          onClose={() => setTimelineOrder(null)}
+        />
       )}
     </div>
   );

@@ -198,6 +198,46 @@ RSpec.describe "Api::Orders", type: :request do
     end
   end
 
+  describe "POST /api/orders/:id/proof_of_delivery" do
+    let(:file) { fixture_file_upload("proof_of_delivery.jpg", "image/jpeg") }
+
+    it "attaches a photo as the assigned driver" do
+      driver = create(:driver)
+      order = create(:order, customer: customer, driver: driver)
+
+      post "/api/orders/#{order.id}/proof_of_delivery", params: { file: file }, headers: auth_headers(driver.user)
+
+      expect(response).to have_http_status(:ok)
+      expect(order.reload.proof_of_delivery).to be_attached
+      expect(JSON.parse(response.body)["proof_of_delivery_url"]).to be_present
+    end
+
+    it "allows a dispatcher to attach a photo" do
+      order = create(:order, customer: customer)
+
+      post "/api/orders/#{order.id}/proof_of_delivery", params: { file: file }, headers: auth_headers(dispatcher)
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "forbids a driver not assigned to the order" do
+      order = create(:order, customer: customer)
+      other_driver = create(:driver)
+
+      post "/api/orders/#{order.id}/proof_of_delivery", params: { file: file }, headers: auth_headers(other_driver.user)
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "rejects a request with no file" do
+      order = create(:order, customer: customer)
+
+      post "/api/orders/#{order.id}/proof_of_delivery", headers: auth_headers(dispatcher)
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+  end
+
   describe "DELETE /api/orders/:id" do
     it "allows admin to delete an order" do
       order = create(:order, customer: customer)

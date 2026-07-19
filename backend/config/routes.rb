@@ -17,10 +17,16 @@ Rails.application.routes.draw do
     resources :notifications, only: [ :index, :update ]
     resources :customers
     resources :vehicles
-    resources :drivers
+    resources :drivers do
+      member do
+        post :create_document, path: "documents"
+        delete "documents/:document_id", action: :destroy_document
+      end
+    end
     resources :orders do
       member do
         get :timeline
+        post :proof_of_delivery
       end
     end
 

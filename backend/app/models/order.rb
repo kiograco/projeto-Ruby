@@ -34,6 +34,7 @@ class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
   has_many :tracking_points, dependent: :destroy
   has_many :notifications, dependent: :destroy
+  has_one_attached :proof_of_delivery
 
   accepts_nested_attributes_for :pickup_address, :delivery_address
   accepts_nested_attributes_for :order_items, allow_destroy: true

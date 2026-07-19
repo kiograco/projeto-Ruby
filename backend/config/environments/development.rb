@@ -38,6 +38,11 @@ Rails.application.configure do
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
+  # Same default host/port for Active Storage blob URLs (rails_blob_url), since
+  # this API has no views/mailer-only host to piggyback on for other route helpers.
+  Rails.application.routes.default_url_options[:host] = "localhost"
+  Rails.application.routes.default_url_options[:port] = 3000
+
   # Deliver to Mailhog (see docker-compose.yml) instead of a real SMTP server.
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {

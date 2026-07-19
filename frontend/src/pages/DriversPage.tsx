@@ -12,6 +12,7 @@ import {
 } from "../api/drivers";
 import { useAuth } from "../contexts/AuthContext";
 import { DriverFormPanel } from "../components/drivers/DriverFormPanel";
+import { DriverDocumentsPanel } from "../components/drivers/DriverDocumentsPanel";
 
 type FormState = { mode: "create" } | { mode: "edit"; driver: Driver } | null;
 
@@ -31,6 +32,7 @@ export function DriversPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [form, setForm] = useState<FormState>(null);
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [documentsDriver, setDocumentsDriver] = useState<Driver | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -150,6 +152,13 @@ export function DriversPage() {
                       <td className="space-x-2 px-4 py-2 text-right">
                         <button
                           type="button"
+                          onClick={() => setDocumentsDriver(driver)}
+                          className="text-gray-500 hover:underline"
+                        >
+                          Documents
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             setFormErrors([]);
                             setForm({ mode: "edit", driver });
@@ -216,6 +225,13 @@ export function DriversPage() {
             setForm(null);
             setFormErrors([]);
           }}
+        />
+      )}
+
+      {documentsDriver && (
+        <DriverDocumentsPanel
+          driver={data?.drivers.find((candidate) => candidate.id === documentsDriver.id) ?? documentsDriver}
+          onClose={() => setDocumentsDriver(null)}
         />
       )}
     </div>
