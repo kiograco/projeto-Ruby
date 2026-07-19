@@ -7,6 +7,7 @@ import { CustomersPage } from "../pages/CustomersPage";
 import { DriversPage } from "../pages/DriversPage";
 import { VehiclesPage } from "../pages/VehiclesPage";
 import { OrdersPage } from "../pages/OrdersPage";
+import { TrackingPage } from "../pages/TrackingPage";
 
 export function AppRoutes() {
   return (
@@ -20,7 +21,7 @@ export function AppRoutes() {
           <Route path="/drivers" element={<DriversPage />} />
           <Route path="/vehicles" element={<VehiclesPage />} />
           <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/tracking" element={<PlaceholderPage title="Tracking" />} />
+          <Route path="/tracking" element={<TrackingPage />} />
           <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
           <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
           <Route path="/profile" element={<PlaceholderPage title="Profile" />} />

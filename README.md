@@ -32,6 +32,15 @@ infra/      nginx reverse-proxy config
   transitions are rejected), and role-scoped access: admin/dispatcher manage everything,
   drivers see and progress only their assigned orders, customer-role users can create
   orders. Dashboard page filters by status, assigns drivers, and drives status transitions.
+- **Live tracking** — drivers post GPS coordinates to `/api/tracking/location`, which
+  updates the driver's current position and broadcasts the point over ActionCable
+  (`DeliveryTrackingChannel`, authenticated via a JWT passed as a `?token=` query param
+  on the websocket connection). The dashboard's Tracking page renders a Leaflet map that
+  updates live as points arrive — driver marker, destination marker, route polyline,
+  speed, and straight-line distance remaining — with no polling or page reload. The Expo
+  driver app's Current Delivery screen shares location every 5 seconds via
+  `expo-location`'s `watchPositionAsync` while a delivery is active, and drives the same
+  status-transition flow as the dashboard.
 
 ## Prerequisites
 
@@ -95,6 +104,10 @@ POST   /api/orders
 GET    /api/orders/:id
 PATCH  /api/orders/:id
 DELETE /api/orders/:id
+
+POST   /api/tracking/location
+GET    /api/tracking/:order_id
+GET    /api/tracking/history/:order_id
 ```
 
 ## Frontend

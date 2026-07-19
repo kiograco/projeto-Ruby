@@ -3,13 +3,10 @@ import { PlaceholderScreen } from "./PlaceholderScreen";
 export { SplashScreen } from "./SplashScreen";
 export { LoginScreen } from "./LoginScreen";
 export { ProfileScreen } from "./ProfileScreen";
+export { CurrentDeliveryScreen } from "./CurrentDeliveryScreen";
 
 export function AvailableDeliveriesScreen() {
   return <PlaceholderScreen title="Available Deliveries" />;
-}
-
-export function CurrentDeliveryScreen() {
-  return <PlaceholderScreen title="Current Delivery" />;
 }
 
 export function NavigationScreen() {

@@ -15,6 +15,10 @@ Rails.application.routes.draw do
     resources :vehicles
     resources :drivers
     resources :orders
+
+    post "tracking/location", to: "tracking#create"
+    get "tracking/history/:order_id", to: "tracking#history"
+    get "tracking/:order_id", to: "tracking#show"
   end
 
   mount ActionCable.server => "/cable"

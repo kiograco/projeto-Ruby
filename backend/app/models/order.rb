@@ -25,6 +25,7 @@ class Order < ApplicationRecord
   belongs_to :pickup_address, class_name: "Address"
   belongs_to :delivery_address, class_name: "Address"
   has_many :order_items, dependent: :destroy
+  has_many :tracking_points, dependent: :destroy
 
   accepts_nested_attributes_for :pickup_address, :delivery_address
   accepts_nested_attributes_for :order_items, allow_destroy: true

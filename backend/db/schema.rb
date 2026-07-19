@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_160002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "postgis"
@@ -104,6 +104,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_160002) do
     t.index ["name"], name: "index_roles_on_name", unique: true
   end
 
+  create_table "tracking_points", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "driver_id", null: false
+    t.decimal "heading", precision: 6, scale: 2
+    t.decimal "latitude", precision: 10, scale: 6, null: false
+    t.decimal "longitude", precision: 10, scale: 6, null: false
+    t.bigint "order_id", null: false
+    t.datetime "recorded_at", null: false
+    t.decimal "speed", precision: 6, scale: 2
+    t.datetime "updated_at", null: false
+    t.index ["driver_id"], name: "index_tracking_points_on_driver_id"
+    t.index ["order_id", "recorded_at"], name: "index_tracking_points_on_order_id_and_recorded_at"
+    t.index ["order_id"], name: "index_tracking_points_on_order_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
@@ -138,5 +153,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_160002) do
   add_foreign_key "orders", "drivers"
   add_foreign_key "orders", "users", column: "created_by_id"
   add_foreign_key "refresh_tokens", "users"
+  add_foreign_key "tracking_points", "drivers"
+  add_foreign_key "tracking_points", "orders"
   add_foreign_key "users", "roles"
 end
