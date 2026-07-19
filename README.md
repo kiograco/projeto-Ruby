@@ -63,12 +63,14 @@ infra/      nginx reverse-proxy config
   `/api/dashboard/realtime` (online drivers with live position and current order),
   both admin/dispatcher only. Dashboard page shows the overview as a stat-tile grid,
   auto-refreshing every 15 seconds.
-- **Reports** — `/api/reports/{deliveries,drivers,performance}`, each renderable as
-  JSON, CSV (`?export=csv`), or PDF (`?export=pdf`, via Prawn). Deliveries is a daily
-  breakdown over a date range; drivers ranks by completed deliveries with average
-  delivery time and revenue; performance is a fleet-wide summary including on-time
-  rate. Reports page has a tab per report with a live table and CSV/PDF download
-  buttons that stream the authenticated response as a file.
+- **Reports** — `/api/reports/{deliveries,monthly,drivers,customers,performance}`, each
+  renderable as JSON, CSV (`?export=csv`), or PDF (`?export=pdf`, via Prawn). Deliveries
+  is a daily breakdown over a date range; monthly is the same rollup by month (defaults
+  to the last 12); drivers ranks by completed deliveries with average delivery time and
+  revenue; customers ranks by revenue with order/delivered counts; performance is a
+  fleet-wide summary including on-time rate. Reports page has a tab per report with a
+  live table and CSV/PDF download buttons that stream the authenticated response as a
+  file.
 - **Notifications** — in-app and email notifications fire on order creation, driver
   assignment, and each status transition (picked up, near destination, delivered,
   failed), addressed to the order's creator (and the assigned driver, on assignment).
@@ -83,6 +85,9 @@ infra/      nginx reverse-proxy config
   an `ActiveSupport::CurrentAttributes` set during authentication). `GET
   /api/orders/:id/timeline` returns an order's event history; the Orders page has a
   "History" button per row that opens it as a timeline panel.
+- **API documentation** — a hand-written OpenAPI 3.0 spec (`backend/public/openapi.yaml`)
+  covering every endpoint below, browsable as interactive Swagger UI at
+  `/api-docs.html` (`http://localhost:3000/api-docs.html` in dev).
 
 ## Prerequisites
 
@@ -170,7 +175,9 @@ GET    /api/dashboard/overview
 GET    /api/dashboard/realtime
 
 GET    /api/reports/deliveries    (?from=&to=&export=csv|pdf)
+GET    /api/reports/monthly       (?from=&to=&export=csv|pdf, defaults to last 12 months)
 GET    /api/reports/drivers       (?export=csv|pdf)
+GET    /api/reports/customers     (?export=csv|pdf)
 GET    /api/reports/performance   (?export=csv|pdf)
 
 GET    /api/notifications         (?unread=true)
@@ -223,8 +230,11 @@ The production Dockerfile builds and runs independently of `docker-compose.yml`
 ## What's left for 100% usability
 
 The 10-sprint MVP roadmap from the spec is done (auth, users, customers, drivers,
-vehicles, orders, live tracking, dashboard, reports, 99%+ test coverage, CI). A full
-re-read of the spec against the codebase found these remaining gaps:
+vehicles, orders, live tracking, dashboard, reports, 99%+ test coverage, CI), and a
+full re-read of the spec against the codebase closed most of what it was missing:
+notifications, an audit trail, file attachments, the driver accept-delivery workflow,
+an ETA on tracking, the remaining Expo driver-app screens, OpenAPI docs, and two more
+reports. What's left:
 
 ### Spec features no sprint ever built
 
@@ -237,9 +247,6 @@ re-read of the spec against the codebase found these remaining gaps:
       `storage.yml`-only config change, not yet made
 - [ ] Active Storage variant/thumbnail generation for uploaded images — files
       are stored and served as-is, no resizing
-- [ ] OpenAPI/Swagger documentation for the API (Section 29)
-- [ ] Customer Activity and Monthly rollup reports (Section 19 lists both; only a daily
-      deliveries report exists)
 - [ ] Real turn-by-turn navigation — the driver app's Navigation screen shows straight-line
       distance/ETA and an "Open in Maps" deep link to the device's own maps app, not
       in-app routing (no `react-native-maps`/routing API integration)

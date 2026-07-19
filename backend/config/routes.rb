@@ -44,6 +44,8 @@ Rails.application.routes.draw do
     get "reports/deliveries", to: "reports#deliveries"
     get "reports/drivers", to: "reports#drivers"
     get "reports/performance", to: "reports#performance"
+    get "reports/customers", to: "reports#customers"
+    get "reports/monthly", to: "reports#monthly"
   end
 
   mount ActionCable.server => "/cable"

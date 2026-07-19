@@ -36,6 +36,33 @@ export interface PerformanceReport {
   on_time_rate: number | null;
 }
 
+export interface CustomerReportRow {
+  customer_id: number;
+  name: string;
+  orders_count: number;
+  delivered: number;
+  revenue: number;
+}
+
+export interface CustomersReport {
+  rows: CustomerReportRow[];
+}
+
+export interface MonthlyReportRow {
+  month: string;
+  total: number;
+  delivered: number;
+  failed: number;
+  cancelled: number;
+  revenue: number;
+}
+
+export interface MonthlyReport {
+  from: string;
+  to: string;
+  rows: MonthlyReportRow[];
+}
+
 export async function fetchDeliveriesReport(params: { from?: string; to?: string }): Promise<DeliveriesReport> {
   const { data } = await apiClient.get<DeliveriesReport>("/reports/deliveries", { params });
   return data;
@@ -51,7 +78,17 @@ export async function fetchPerformanceReport(): Promise<PerformanceReport> {
   return data;
 }
 
-export type ReportName = "deliveries" | "drivers" | "performance";
+export async function fetchCustomersReport(): Promise<CustomersReport> {
+  const { data } = await apiClient.get<CustomersReport>("/reports/customers");
+  return data;
+}
+
+export async function fetchMonthlyReport(params: { from?: string; to?: string }): Promise<MonthlyReport> {
+  const { data } = await apiClient.get<MonthlyReport>("/reports/monthly", { params });
+  return data;
+}
+
+export type ReportName = "deliveries" | "drivers" | "performance" | "customers" | "monthly";
 
 export async function downloadReport(
   report: ReportName,

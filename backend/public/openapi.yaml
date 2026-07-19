@@ -1,0 +1,1101 @@
+openapi: 3.0.3
+info:
+  title: Delivery Tracker Platform API
+  description: >
+    REST API for the Delivery Tracker Platform — authentication, fleet and order
+    management, live GPS tracking, notifications, an audit trail, file attachments,
+    and reporting. All endpoints except /api/health and /api/auth/* require a JWT
+    bearer token.
+  version: "1.0"
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Me
+  - name: Users
+  - name: Customers
+  - name: Vehicles
+  - name: Drivers
+  - name: Orders
+  - name: Tracking
+  - name: Dashboard
+  - name: Reports
+  - name: Notifications
+  - name: Health
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  environment: { type: string }
+                  timestamp: { type: string, format: date-time }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200":
+          description: Access + refresh token pair
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "401":
+          description: Invalid credentials, inactive user, or account locked (5 failed attempts)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Exchange a refresh token for a new access/refresh pair (rotates the refresh token)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200":
+          description: New token pair
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "401":
+          description: Refresh token invalid, expired, or already revoked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke a refresh token
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "204": { description: Logged out }
+
+  /me:
+    get:
+      tags: [Me]
+      summary: Get the signed-in user's profile
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+    patch:
+      tags: [Me]
+      summary: Update the signed-in user's own name and/or password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                password: { type: string, format: password }
+                password_confirmation: { type: string, format: password }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users (admin manages, dispatcher reads)
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Search by name or email
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items: { $ref: "#/components/schemas/User" }
+                  meta: { $ref: "#/components/schemas/PagyMeta" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Users]
+      summary: Create a user (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, role]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                role: { type: string, enum: [admin, dispatcher, driver, customer] }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /users/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Users]
+      summary: Get a user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+    put:
+      tags: [Users]
+      summary: Update a user (admin only)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                role: { type: string, enum: [admin, dispatcher, driver, customer] }
+                active: { type: boolean }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [Users]
+      summary: Deactivate a user (admin only; not a hard delete)
+      responses:
+        "204": { description: Deactivated }
+
+  /customers:
+    get:
+      tags: [Customers]
+      summary: List customers
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - name: q
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customers:
+                    type: array
+                    items: { $ref: "#/components/schemas/Customer" }
+                  meta: { $ref: "#/components/schemas/PagyMeta" }
+    post:
+      tags: [Customers]
+      summary: Create a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Customer" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /customers/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Customers]
+      summary: Get a customer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Customer" }
+    put:
+      tags: [Customers]
+      summary: Update a customer
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Customer" }
+    delete:
+      tags: [Customers]
+      summary: Delete a customer
+      responses:
+        "204": { description: Deleted }
+
+  /vehicles:
+    get:
+      tags: [Vehicles]
+      summary: List vehicles
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - name: q
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vehicles:
+                    type: array
+                    items: { $ref: "#/components/schemas/Vehicle" }
+                  meta: { $ref: "#/components/schemas/PagyMeta" }
+    post:
+      tags: [Vehicles]
+      summary: Create a vehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VehicleInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Vehicle" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /vehicles/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Vehicles]
+      summary: Get a vehicle
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Vehicle" }
+    put:
+      tags: [Vehicles]
+      summary: Update a vehicle
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VehicleInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Vehicle" }
+    delete:
+      tags: [Vehicles]
+      summary: Delete a vehicle
+      responses:
+        "204": { description: Deleted }
+
+  /drivers:
+    get:
+      tags: [Drivers]
+      summary: List drivers
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - name: q
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  drivers:
+                    type: array
+                    items: { $ref: "#/components/schemas/Driver" }
+                  meta: { $ref: "#/components/schemas/PagyMeta" }
+    post:
+      tags: [Drivers]
+      summary: Create a driver (admin only; also creates the underlying user account)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, license_number]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                license_number: { type: string }
+                vehicle_id: { type: integer, nullable: true }
+                status: { type: string, enum: [offline, available, on_delivery] }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Driver" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /drivers/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Drivers]
+      summary: Get a driver
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Driver" }
+    put:
+      tags: [Drivers]
+      summary: Update a driver (admin only)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                license_number: { type: string }
+                vehicle_id: { type: integer, nullable: true }
+                status: { type: string, enum: [offline, available, on_delivery] }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Driver" }
+    delete:
+      tags: [Drivers]
+      summary: Delete a driver (admin only)
+      responses:
+        "204": { description: Deleted }
+
+  /drivers/{id}/documents:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Drivers]
+      summary: Attach a document to a driver (admin only)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: Attached
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Driver" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /drivers/{id}/documents/{document_id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: document_id
+        in: path
+        required: true
+        schema: { type: integer }
+    delete:
+      tags: [Drivers]
+      summary: Remove a driver document (admin only)
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Driver" }
+
+  /orders:
+    get:
+      tags: [Orders]
+      summary: List orders (scoped to what the caller's role can see)
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/OrderStatus" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items: { $ref: "#/components/schemas/Order" }
+                  meta: { $ref: "#/components/schemas/PagyMeta" }
+    post:
+      tags: [Orders]
+      summary: Create an order with nested pickup/delivery addresses and line items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrderInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /orders/available:
+    get:
+      tags: [Orders]
+      summary: List unassigned, pending orders any driver can browse and claim
+      parameters:
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items: { $ref: "#/components/schemas/Order" }
+                  meta: { $ref: "#/components/schemas/PagyMeta" }
+
+  /orders/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Orders]
+      summary: Get an order
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+    patch:
+      tags: [Orders]
+      summary: Update an order's status and/or (admin/dispatcher) driver assignment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { $ref: "#/components/schemas/OrderStatus" }
+                driver_id: { type: integer, nullable: true }
+                estimated_delivery_at: { type: string, format: date-time, nullable: true }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [Orders]
+      summary: Delete an order (admin only)
+      responses:
+        "204": { description: Deleted }
+
+  /orders/{id}/accept:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Orders]
+      summary: Driver self-assigns an available (pending, unassigned) order
+      responses:
+        "200":
+          description: Assigned to the calling driver, status moves to assigned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "403":
+          description: Not a driver, or the order already has a driver / isn't pending
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+
+  /orders/{id}/proof_of_delivery:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Orders]
+      summary: Attach a proof-of-delivery file (assigned driver, or admin/dispatcher)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: Attached
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /orders/{id}/timeline:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Orders]
+      summary: Audit trail for an order (created, driver assigned, status changes)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: "#/components/schemas/AuditEvent" }
+
+  /tracking/location:
+    post:
+      tags: [Tracking]
+      summary: Driver reports a GPS position for their currently assigned order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_id, latitude, longitude]
+              properties:
+                order_id: { type: integer }
+                latitude: { type: number, format: float }
+                longitude: { type: number, format: float }
+                speed: { type: number, format: float, nullable: true }
+                heading: { type: number, format: float, nullable: true }
+      responses:
+        "201":
+          description: Recorded and broadcast over ActionCable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TrackingPoint" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /tracking/{order_id}:
+    parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Tracking]
+      summary: Latest known position for an order
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_status: { $ref: "#/components/schemas/OrderStatus" }
+                  point:
+                    allOf: [{ $ref: "#/components/schemas/TrackingPoint" }]
+                    nullable: true
+
+  /tracking/history/{order_id}:
+    parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Tracking]
+      summary: Full position history for an order, oldest first
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  points:
+                    type: array
+                    items: { $ref: "#/components/schemas/TrackingPoint" }
+
+  /dashboard/overview:
+    get:
+      tags: [Dashboard]
+      summary: Fleet-wide stat tiles (admin/dispatcher only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active_drivers: { type: integer }
+                  online_drivers: { type: integer }
+                  deliveries_today: { type: integer }
+                  average_delivery_time_minutes: { type: number, nullable: true }
+                  revenue_today: { type: number }
+                  pending_deliveries: { type: integer }
+                  completed_deliveries: { type: integer }
+
+  /dashboard/realtime:
+    get:
+      tags: [Dashboard]
+      summary: Online drivers with live position and current order (admin/dispatcher only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  drivers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        name: { type: string }
+                        status: { type: string }
+                        latitude: { type: number, nullable: true }
+                        longitude: { type: number, nullable: true }
+                        current_order_id: { type: integer, nullable: true }
+
+  /reports/deliveries:
+    get:
+      tags: [Reports]
+      summary: Daily delivery breakdown over a date range (admin/dispatcher only)
+      parameters:
+        - $ref: "#/components/parameters/ReportFrom"
+        - $ref: "#/components/parameters/ReportTo"
+        - $ref: "#/components/parameters/ReportExport"
+      responses:
+        "200": { $ref: "#/components/responses/ReportResponse" }
+
+  /reports/drivers:
+    get:
+      tags: [Reports]
+      summary: Driver ranking by completed deliveries (admin/dispatcher only)
+      parameters:
+        - $ref: "#/components/parameters/ReportExport"
+      responses:
+        "200": { $ref: "#/components/responses/ReportResponse" }
+
+  /reports/performance:
+    get:
+      tags: [Reports]
+      summary: Fleet-wide performance summary including on-time rate (admin/dispatcher only)
+      parameters:
+        - $ref: "#/components/parameters/ReportExport"
+      responses:
+        "200": { $ref: "#/components/responses/ReportResponse" }
+
+  /reports/customers:
+    get:
+      tags: [Reports]
+      summary: Customer activity ranked by revenue (admin/dispatcher only)
+      parameters:
+        - $ref: "#/components/parameters/ReportExport"
+      responses:
+        "200": { $ref: "#/components/responses/ReportResponse" }
+
+  /reports/monthly:
+    get:
+      tags: [Reports]
+      summary: Monthly delivery rollup (admin/dispatcher only; defaults to the last 12 months)
+      parameters:
+        - $ref: "#/components/parameters/ReportFrom"
+        - $ref: "#/components/parameters/ReportTo"
+        - $ref: "#/components/parameters/ReportExport"
+      responses:
+        "200": { $ref: "#/components/responses/ReportResponse" }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List the signed-in user's notifications
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - name: unread
+          in: query
+          schema: { type: string, enum: ["true"] }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items: { $ref: "#/components/schemas/Notification" }
+                  unread_count: { type: integer }
+                  meta: { $ref: "#/components/schemas/PagyMeta" }
+
+  /notifications/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    put:
+      tags: [Notifications]
+      summary: Mark one notification as read
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notification" }
+
+  /notifications/mark_all_read:
+    post:
+      tags: [Notifications]
+      summary: Mark all of the signed-in user's notifications as read
+      responses:
+        "204": { description: Done }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, default: 1 }
+    ReportFrom:
+      name: from
+      in: query
+      schema: { type: string, format: date }
+      description: Defaults to 29 days before `to`
+    ReportTo:
+      name: to
+      in: query
+      schema: { type: string, format: date }
+      description: Defaults to today
+    ReportExport:
+      name: export
+      in: query
+      schema: { type: string, enum: [csv, pdf] }
+      description: Omit for JSON; csv/pdf stream a file download instead
+
+  responses:
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorList" }
+    Forbidden:
+      description: Not authorized for this action
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorMessage" }
+    ReportResponse:
+      description: JSON by default; a CSV or PDF file when `export` is set
+      content:
+        application/json:
+          schema:
+            type: object
+            description: Shape varies per report; see the `rows` array for tabular reports.
+        text/csv: {}
+        application/pdf: {}
+
+  schemas:
+    ErrorMessage:
+      type: object
+      properties:
+        error: { type: string }
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items: { type: string }
+    PagyMeta:
+      type: object
+      properties:
+        page: { type: integer }
+        pages: { type: integer }
+        count: { type: integer }
+        limit: { type: integer }
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [admin, dispatcher, driver, customer] }
+        active: { type: boolean }
+    AuthResponse:
+      type: object
+      properties:
+        access_token: { type: string, description: "JWT, 15 minute expiry" }
+        refresh_token: { type: string, description: "Opaque token, 30 day expiry, rotates on use" }
+        user: { $ref: "#/components/schemas/User" }
+    Customer:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        phone: { type: string }
+        email: { type: string, format: email }
+        document: { type: string }
+        created_at: { type: string, format: date-time }
+    CustomerInput:
+      type: object
+      required: [name, phone, email, document]
+      properties:
+        name: { type: string }
+        phone: { type: string }
+        email: { type: string, format: email }
+        document: { type: string }
+    Vehicle:
+      type: object
+      properties:
+        id: { type: integer }
+        plate: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        vehicle_type: { type: string }
+        capacity: { type: number }
+    VehicleInput:
+      type: object
+      required: [plate, model, year, vehicle_type, capacity]
+      properties:
+        plate: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        vehicle_type: { type: string }
+        capacity: { type: number }
+    Driver:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        license_number: { type: string }
+        status: { type: string, enum: [offline, available, on_delivery] }
+        current_latitude: { type: number, nullable: true }
+        current_longitude: { type: number, nullable: true }
+        vehicle:
+          allOf: [{ $ref: "#/components/schemas/Vehicle" }]
+          nullable: true
+        documents:
+          type: array
+          items: { $ref: "#/components/schemas/DriverDocument" }
+    DriverDocument:
+      type: object
+      properties:
+        id: { type: integer }
+        filename: { type: string }
+        url: { type: string, format: uri }
+    Address:
+      type: object
+      properties:
+        id: { type: integer }
+        street: { type: string }
+        number: { type: string }
+        complement: { type: string, nullable: true }
+        neighborhood: { type: string }
+        city: { type: string }
+        state: { type: string }
+        zip_code: { type: string }
+        latitude: { type: number, nullable: true }
+        longitude: { type: number, nullable: true }
+    AddressInput:
+      type: object
+      required: [street, number, neighborhood, city, state, zip_code]
+      properties:
+        street: { type: string }
+        number: { type: string }
+        complement: { type: string }
+        neighborhood: { type: string }
+        city: { type: string }
+        state: { type: string }
+        zip_code: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+    OrderItem:
+      type: object
+      properties:
+        id: { type: integer }
+        description: { type: string }
+        quantity: { type: integer }
+        unit_price: { type: number }
+    OrderItemInput:
+      type: object
+      required: [description, quantity, unit_price]
+      properties:
+        description: { type: string }
+        quantity: { type: integer }
+        unit_price: { type: number }
+    OrderStatus:
+      type: string
+      enum: [pending, assigned, picked_up, in_transit, near_destination, delivered, cancelled, failed]
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        total_price: { type: number }
+        estimated_delivery_at: { type: string, format: date-time, nullable: true }
+        delivered_at: { type: string, format: date-time, nullable: true }
+        customer:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        driver:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        pickup_address: { $ref: "#/components/schemas/Address" }
+        delivery_address: { $ref: "#/components/schemas/Address" }
+        order_items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderItem" }
+        proof_of_delivery_url: { type: string, format: uri, nullable: true }
+        created_at: { type: string, format: date-time }
+    OrderInput:
+      type: object
+      required: [customer_id, pickup_address_attributes, delivery_address_attributes]
+      properties:
+        customer_id: { type: integer }
+        driver_id: { type: integer, nullable: true }
+        total_price: { type: number, description: "Computed from order_items if omitted" }
+        estimated_delivery_at: { type: string, format: date-time }
+        pickup_address_attributes: { $ref: "#/components/schemas/AddressInput" }
+        delivery_address_attributes: { $ref: "#/components/schemas/AddressInput" }
+        order_items_attributes:
+          type: array
+          items: { $ref: "#/components/schemas/OrderItemInput" }
+    TrackingPoint:
+      type: object
+      properties:
+        id: { type: integer }
+        order_id: { type: integer }
+        driver_id: { type: integer }
+        latitude: { type: number }
+        longitude: { type: number }
+        speed: { type: number, nullable: true }
+        heading: { type: number, nullable: true }
+        recorded_at: { type: string, format: date-time }
+    Notification:
+      type: object
+      properties:
+        id: { type: integer }
+        order_id: { type: integer, nullable: true }
+        event:
+          type: string
+          enum:
+            [order_created, driver_assigned, pickup_complete, near_destination, delivered, failed, delivery_delayed]
+        title: { type: string }
+        body: { type: string }
+        read: { type: boolean }
+        created_at: { type: string, format: date-time }
+    AuditEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        action: { type: string, example: status_change }
+        user_name: { type: string, nullable: true }
+        before_state: { type: object, nullable: true }
+        after_state: { type: object, nullable: true }
+        created_at: { type: string, format: date-time }

@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   downloadReport,
+  fetchCustomersReport,
   fetchDeliveriesReport,
   fetchDriversReport,
+  fetchMonthlyReport,
   fetchPerformanceReport,
   type ReportName,
 } from "../api/reports";
@@ -12,7 +14,9 @@ type Tab = ReportName;
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "deliveries", label: "Deliveries" },
+  { key: "monthly", label: "Monthly" },
   { key: "drivers", label: "Driver ranking" },
+  { key: "customers", label: "Customer activity" },
   { key: "performance", label: "Performance" },
 ];
 
@@ -162,6 +166,95 @@ function DriversReportSection() {
   );
 }
 
+function MonthlyReportSection() {
+  const { data, isLoading } = useQuery({ queryKey: ["reports", "monthly"], queryFn: () => fetchMonthlyReport({}) });
+
+  return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <ExportButtons report="monthly" />
+      </div>
+
+      {isLoading && <p className="text-gray-500">Loading…</p>}
+
+      {data && (
+        <div className="overflow-x-auto rounded border border-gray-200 bg-white">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Month</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Total</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Delivered</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Failed</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Cancelled</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Revenue</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {data.rows.map((row) => (
+                <tr key={row.month}>
+                  <td className="px-4 py-2 text-gray-900">{row.month}</td>
+                  <td className="px-4 py-2 text-gray-600">{row.total}</td>
+                  <td className="px-4 py-2 text-gray-600">{row.delivered}</td>
+                  <td className="px-4 py-2 text-gray-600">{row.failed}</td>
+                  <td className="px-4 py-2 text-gray-600">{row.cancelled}</td>
+                  <td className="px-4 py-2 text-gray-600">${row.revenue.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomersReportSection() {
+  const { data, isLoading } = useQuery({ queryKey: ["reports", "customers"], queryFn: fetchCustomersReport });
+
+  return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <ExportButtons report="customers" />
+      </div>
+
+      {isLoading && <p className="text-gray-500">Loading…</p>}
+
+      {data && (
+        <div className="overflow-x-auto rounded border border-gray-200 bg-white">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Customer</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Orders</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Delivered</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-500">Revenue</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {data.rows.map((row) => (
+                <tr key={row.customer_id}>
+                  <td className="px-4 py-2 text-gray-900">{row.name}</td>
+                  <td className="px-4 py-2 text-gray-600">{row.orders_count}</td>
+                  <td className="px-4 py-2 text-gray-600">{row.delivered}</td>
+                  <td className="px-4 py-2 text-gray-600">${row.revenue.toFixed(2)}</td>
+                </tr>
+              ))}
+              {data.rows.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
+                    No customer activity yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PerformanceReportSection() {
   const { data, isLoading } = useQuery({ queryKey: ["reports", "performance"], queryFn: fetchPerformanceReport });
 
@@ -234,7 +327,9 @@ export function ReportsPage() {
       </div>
 
       {tab === "deliveries" && <DeliveriesReportSection />}
+      {tab === "monthly" && <MonthlyReportSection />}
       {tab === "drivers" && <DriversReportSection />}
+      {tab === "customers" && <CustomersReportSection />}
       {tab === "performance" && <PerformanceReportSection />}
     </div>
   );

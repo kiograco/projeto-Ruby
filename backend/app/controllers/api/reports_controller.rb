@@ -49,6 +49,49 @@ module Api
       ) { { rows: rows } }
     end
 
+    def customers
+      rows = Customer.includes(:orders).map do |customer|
+        orders = customer.orders.to_a
+        delivered = orders.select { |order| order.status == Order::DELIVERED }
+
+        {
+          customer_id: customer.id,
+          name: customer.name,
+          orders_count: orders.size,
+          delivered: delivered.size,
+          revenue: delivered.sum(&:total_price).to_f
+        }
+      end.select { |row| row[:orders_count].positive? }.sort_by { |row| -row[:revenue] }
+
+      respond_with_report(
+        rows, %w[customer_id name orders_count delivered revenue], "customer_activity"
+      ) { { rows: rows } }
+    end
+
+    def monthly
+      from, to = monthly_range
+      orders = Order.where(created_at: from.beginning_of_month..to.end_of_month).to_a
+      grouped = orders.group_by { |order| order.created_at.to_date.beginning_of_month }
+
+      rows = month_sequence(from, to).map do |month|
+        month_orders = grouped[month] || []
+        delivered = month_orders.select { |order| order.status == Order::DELIVERED }
+
+        {
+          month: month.strftime("%Y-%m"),
+          total: month_orders.size,
+          delivered: delivered.size,
+          failed: month_orders.count { |order| order.status == Order::FAILED },
+          cancelled: month_orders.count { |order| order.status == Order::CANCELLED },
+          revenue: delivered.sum(&:total_price).to_f
+        }
+      end
+
+      respond_with_report(rows, %w[month total delivered failed cancelled revenue], "monthly") do
+        { from: from.iso8601, to: to.iso8601, rows: rows }
+      end
+    end
+
     def performance
       orders = Order.all.to_a
       delivered = orders.select { |order| order.status == Order::DELIVERED }
@@ -86,6 +129,23 @@ module Api
       to = params[:to].present? ? Date.parse(params[:to]) : Time.zone.today
       from = params[:from].present? ? Date.parse(params[:from]) : to - 29.days
       [ from, to ]
+    end
+
+    def monthly_range
+      to = params[:to].present? ? Date.parse(params[:to]) : Time.zone.today
+      from = params[:from].present? ? Date.parse(params[:from]) : (to << 11).beginning_of_month
+      [ from, to ]
+    end
+
+    def month_sequence(from, to)
+      months = []
+      cursor = from.beginning_of_month
+      last_month = to.beginning_of_month
+      while cursor <= last_month
+        months << cursor
+        cursor = cursor.next_month
+      end
+      months
     end
 
     def respond_with_report(rows, headers, filename)
