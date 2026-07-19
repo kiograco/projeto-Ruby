@@ -1,9 +1,7 @@
 # Delivery Tracker Platform
 
 Real-time delivery management platform (SaaS) — Rails API backend, React dashboard,
-and an Expo/React Native driver app. See
-[`Delivery_Tracker_Master_AI_Specification.md`](./Delivery_Tracker_Master_AI_Specification.md)
-for the full product/technical spec this build follows.
+and an Expo/React Native driver app.
 
 ## Structure
 
