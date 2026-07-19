@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "../components/Layout";
-import { PlaceholderPage } from "../components/PlaceholderPage";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { LoginPage } from "../pages/LoginPage";
 import { CustomersPage } from "../pages/CustomersPage";
@@ -10,6 +9,8 @@ import { OrdersPage } from "../pages/OrdersPage";
 import { TrackingPage } from "../pages/TrackingPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { ReportsPage } from "../pages/ReportsPage";
+import { SettingsPage } from "../pages/SettingsPage";
+import { ProfilePage } from "../pages/ProfilePage";
 
 export function AppRoutes() {
   return (
@@ -25,8 +26,8 @@ export function AppRoutes() {
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/tracking" element={<TrackingPage />} />
           <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
-          <Route path="/profile" element={<PlaceholderPage title="Profile" />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
     </Routes>

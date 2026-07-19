@@ -6,11 +6,13 @@ Rails.application.routes.draw do
   namespace :api do
     get "health", to: "health#show"
     get "me", to: "me#show"
+    patch "me", to: "me#update"
 
     post "auth/login", to: "auth#login"
     post "auth/refresh", to: "auth#refresh"
     post "auth/logout", to: "auth#logout"
 
+    resources :users
     resources :customers
     resources :vehicles
     resources :drivers

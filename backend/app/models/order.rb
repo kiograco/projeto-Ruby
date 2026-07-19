@@ -21,7 +21,7 @@ class Order < ApplicationRecord
 
   belongs_to :customer
   belongs_to :driver, optional: true
-  belongs_to :created_by, class_name: "User"
+  belongs_to :created_by, class_name: "User", inverse_of: :created_orders
   belongs_to :pickup_address, class_name: "Address"
   belongs_to :delivery_address, class_name: "Address"
   has_many :order_items, dependent: :destroy

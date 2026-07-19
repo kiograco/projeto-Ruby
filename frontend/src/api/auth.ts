@@ -27,3 +27,12 @@ export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await apiClient.get<AuthUser>("/me");
   return data;
 }
+
+export async function updateCurrentUser(input: {
+  name?: string;
+  password?: string;
+  password_confirmation?: string;
+}): Promise<AuthUser> {
+  const { data } = await apiClient.patch<AuthUser>("/me", input);
+  return data;
+}

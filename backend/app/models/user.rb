@@ -7,6 +7,8 @@ class User < ApplicationRecord
   belongs_to :role
   has_many :refresh_tokens, dependent: :destroy
   has_one :driver, dependent: :destroy
+  has_many :created_orders, class_name: "Order", foreign_key: :created_by_id, inverse_of: :created_by,
+                             dependent: :restrict_with_error
 
   before_validation { self.email = email&.downcase&.strip }
 
@@ -15,6 +17,10 @@ class User < ApplicationRecord
                      format: { with: URI::MailTo::EMAIL_REGEXP }
 
   scope :active, -> { where(active: true) }
+  scope :search, lambda { |term|
+    pattern = "%#{sanitize_sql_like(term)}%"
+    where("name ILIKE :p OR email ILIKE :p", p: pattern)
+  }
 
   def locked?
     locked_at.present? && locked_at > LOCKOUT_DURATION.ago

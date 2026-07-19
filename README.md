@@ -18,6 +18,10 @@ infra/      nginx reverse-proxy config
   account lockout after 5 failed login attempts, role-based users (admin/dispatcher/driver/
   customer). Login, session refresh, and logout work end-to-end in both the React dashboard
   and the Expo driver app.
+- **User management** — full CRUD (`/api/users`, admin manages, dispatcher reads), plus
+  self-service profile editing (`PATCH /api/me`) for any signed-in user. Deleting a user
+  deactivates it instead of a hard delete, since it may be referenced by historical orders.
+  Dashboard has a Settings page (admin user management) and a Profile page (self-service).
 - **Customers** — full CRUD (`/api/customers`) with search and pagination, restricted by
   role (admin manages, dispatcher has read access). Backed by a dashboard page with a
   searchable, paginated table and create/edit/delete forms.
@@ -85,7 +89,7 @@ docker compose run --rm api bundle exec rubocop
 ```
 
 Add `-e COVERAGE=1` to generate a SimpleCov report at `backend/coverage/index.html`
-(151 examples, 99%+ line coverage — the only gaps are empty Rails boilerplate that
+(168 examples, 99%+ line coverage — the only gaps are empty Rails boilerplate that
 nothing in the app calls yet, like `ApplicationMailer`):
 
 ```bash
@@ -99,6 +103,13 @@ POST   /api/auth/login
 POST   /api/auth/refresh
 POST   /api/auth/logout
 GET    /api/me
+PATCH  /api/me
+
+GET    /api/users
+POST   /api/users
+GET    /api/users/:id
+PUT    /api/users/:id
+DELETE /api/users/:id   (deactivates, not a hard delete)
 
 GET    /api/customers
 POST   /api/customers
@@ -172,14 +183,9 @@ The production Dockerfile builds and runs independently of `docker-compose.yml`
 
 ## What's left for 100% usability
 
-The 10-sprint MVP roadmap from the spec is done (auth, customers, drivers, vehicles,
-orders, live tracking, dashboard, reports, 99%+ test coverage, CI). These are the
-gaps between that and a fully usable, production-ready system:
-
-### Dashboard pages that are still placeholders
-
-- [ ] Settings
-- [ ] Profile
+The 10-sprint MVP roadmap from the spec is done (auth, users, customers, drivers,
+vehicles, orders, live tracking, dashboard, reports, 99%+ test coverage, CI). A full
+re-read of the spec against the codebase found these remaining gaps:
 
 ### Driver app screens that are still placeholders
 
@@ -191,10 +197,23 @@ gaps between that and a fully usable, production-ready system:
 ### Spec features no sprint ever built
 
 - [ ] Notifications (email/push/in-app on order status changes — Section 14)
-- [ ] Audit log (Section 18 lists it as a domain entity; nothing writes to it yet)
+- [ ] Background jobs — Sidekiq has been running since Sprint 1 with nothing to do;
+      `SendEmailJob`, `DeliveryDelayJob`, `CleanupLogsJob` (Section 15) don't exist yet
+- [ ] Audit log (Section 18 lists it as a domain entity; nothing writes to it yet —
+      this is also what "Orders display complete history" in the acceptance criteria
+      implies beyond the tracking-point history that already exists)
 - [ ] File storage / attachments — proof of delivery photos, driver documents,
-      invoices (Section 16)
+      invoices (Section 16); `ActiveStorage` is configured but unused
 - [ ] OpenAPI/Swagger documentation for the API (Section 29)
+- [ ] ETA on the tracking map (Section 13) — only straight-line distance is shown today,
+      not a time estimate
+- [ ] A real "driver accepts an offered delivery" workflow — today a dispatcher always
+      assigns `driver_id` directly; there's no pool of unassigned orders a driver browses
+      and claims themselves (User Story: Driver "Accept delivery")
+- [ ] Dispatcher "monitor delays" — no detection/alerting for orders running late
+      against `estimated_delivery_at`
+- [ ] Customer Activity and Monthly rollup reports (Section 19 lists both; only a daily
+      deliveries report exists)
 
 ### Infrastructure
 

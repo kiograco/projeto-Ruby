@@ -65,4 +65,14 @@ RSpec.describe User, type: :model do
       expect(user.locked_at).to be_nil
     end
   end
+
+  describe ".search" do
+    it "matches by name or email" do
+      match = create(:user, name: "Jane Ops", email: "jane@example.com")
+      create(:user, name: "Someone Else", email: "other@example.com")
+
+      expect(User.search("Jane")).to contain_exactly(match)
+      expect(User.search("jane@example.com")).to contain_exactly(match)
+    end
+  end
 end

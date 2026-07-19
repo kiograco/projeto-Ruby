@@ -129,4 +129,35 @@ RSpec.describe "Api::Auth", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
   end
+
+  describe "PATCH /api/me" do
+    it "updates the current user's own name" do
+      user = create(:user, name: "Old Name")
+
+      patch "/api/me", params: { name: "New Name" }, headers: { "Authorization" => "Bearer #{JwtService.encode(user)}" }
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.name).to eq("New Name")
+    end
+
+    it "updates the password only when provided" do
+      user = create(:user)
+      original_digest = user.password_digest
+
+      patch "/api/me", params: { name: user.name },
+                        headers: { "Authorization" => "Bearer #{JwtService.encode(user)}" }
+
+      expect(user.reload.password_digest).to eq(original_digest)
+    end
+
+    it "changes the password when provided" do
+      user = create(:user)
+
+      patch "/api/me", params: { password: "newsecret123", password_confirmation: "newsecret123" },
+                        headers: { "Authorization" => "Bearer #{JwtService.encode(user)}" }
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.authenticate("newsecret123")).to be_truthy
+    end
+  end
 end
