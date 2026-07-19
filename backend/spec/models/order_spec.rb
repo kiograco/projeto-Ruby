@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Order, type: :model do
+  include ActiveJob::TestHelper
+
   describe "validations" do
     it "is valid with valid attributes" do
       expect(build(:order)).to be_valid
@@ -60,6 +62,62 @@ RSpec.describe Order, type: :model do
       order.transition_to!("cancelled")
 
       expect(order.transition_to!("assigned")).to be false
+    end
+  end
+
+  describe "notifications" do
+    let(:customer) { create(:customer) }
+    let(:creator) { create(:user, :customer) }
+
+    it "notifies the creator when the order is created" do
+      expect {
+        create(:order, customer: customer, created_by: creator)
+      }.to change { creator.notifications.count }.by(1)
+
+      expect(creator.notifications.last.event).to eq(Notification::ORDER_CREATED)
+    end
+
+    it "notifies the creator and driver when a driver is assigned" do
+      order = create(:order, customer: customer, created_by: creator)
+      driver = create(:driver)
+
+      expect {
+        order.update!(driver: driver)
+      }.to change(Notification, :count).by(2)
+
+      expect(driver.user.notifications.last.event).to eq(Notification::DRIVER_ASSIGNED)
+    end
+
+    it "does not notify again when the order is saved without changing the driver" do
+      order = create(:order, customer: customer, created_by: creator, driver: create(:driver))
+
+      expect { order.update!(total_price: 42) }.not_to change(Notification, :count)
+    end
+
+    it "notifies on delivery-relevant status transitions" do
+      order = create(:order, customer: customer, created_by: creator)
+      order.transition_to!("assigned")
+
+      expect { order.transition_to!("picked_up") }.to change { creator.notifications.count }.by(1)
+      expect(creator.notifications.last.event).to eq(Notification::PICKUP_COMPLETE)
+    end
+
+    it "does not notify on transitions with no mapped event (e.g. assigned)" do
+      order = create(:order, customer: customer, created_by: creator)
+
+      expect { order.transition_to!("assigned") }.not_to change(Notification, :count)
+    end
+  end
+
+  describe ".overdue" do
+    it "includes only open orders past their estimate" do
+      overdue = create(:order, customer: create(:customer), estimated_delivery_at: 1.hour.ago)
+      create(:order, customer: create(:customer), estimated_delivery_at: 1.hour.from_now)
+      create(:order, customer: create(:customer), estimated_delivery_at: nil)
+      delivered = create(:order, customer: create(:customer), estimated_delivery_at: 1.hour.ago)
+      delivered.update_column(:status, Order::DELIVERED)
+
+      expect(Order.overdue).to contain_exactly(overdue)
     end
   end
 end

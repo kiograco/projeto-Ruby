@@ -9,6 +9,7 @@ class User < ApplicationRecord
   has_one :driver, dependent: :destroy
   has_many :created_orders, class_name: "Order", foreign_key: :created_by_id, inverse_of: :created_by,
                              dependent: :restrict_with_error
+  has_many :notifications, dependent: :destroy
 
   before_validation { self.email = email&.downcase&.strip }
 

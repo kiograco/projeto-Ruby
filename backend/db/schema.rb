@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "postgis"
@@ -52,6 +52,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_180000) do
     t.index ["license_number"], name: "index_drivers_on_license_number", unique: true
     t.index ["user_id"], name: "index_drivers_on_user_id", unique: true
     t.index ["vehicle_id"], name: "index_drivers_on_vehicle_id"
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.string "event", null: false
+    t.bigint "order_id"
+    t.datetime "read_at"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["order_id"], name: "index_notifications_on_order_id"
+    t.index ["user_id", "read_at"], name: "index_notifications_on_user_id_and_read_at"
+    t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
   create_table "order_items", force: :cascade do |t|
@@ -146,6 +160,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_180000) do
 
   add_foreign_key "drivers", "users"
   add_foreign_key "drivers", "vehicles"
+  add_foreign_key "notifications", "orders"
+  add_foreign_key "notifications", "users"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "addresses", column: "delivery_address_id"
   add_foreign_key "orders", "addresses", column: "pickup_address_id"

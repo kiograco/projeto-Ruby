@@ -56,6 +56,14 @@ infra/      nginx reverse-proxy config
   delivery time and revenue; performance is a fleet-wide summary including on-time
   rate. Reports page has a tab per report with a live table and CSV/PDF download
   buttons that stream the authenticated response as a file.
+- **Notifications** — in-app and email notifications fire on order creation, driver
+  assignment, and each status transition (picked up, near destination, delivered,
+  failed), addressed to the order's creator (and the assigned driver, on assignment).
+  Emails render via `ActionMailer` and deliver through Mailhog in development
+  (`SendEmailJob`, run on Sidekiq). `GET /api/notifications` lists a user's
+  notifications with an unread count and pagination; `PUT /api/notifications/:id`
+  and `POST /api/notifications/mark_all_read` mark them read. The dashboard header
+  has a notification bell with an unread badge, dropdown list, and mark-as-read.
 
 ## Prerequisites
 
@@ -145,6 +153,10 @@ GET    /api/dashboard/realtime
 GET    /api/reports/deliveries    (?from=&to=&export=csv|pdf)
 GET    /api/reports/drivers       (?export=csv|pdf)
 GET    /api/reports/performance   (?export=csv|pdf)
+
+GET    /api/notifications         (?unread=true)
+PUT    /api/notifications/:id     (marks read)
+POST   /api/notifications/mark_all_read
 ```
 
 ## Frontend
@@ -196,9 +208,9 @@ re-read of the spec against the codebase found these remaining gaps:
 
 ### Spec features no sprint ever built
 
-- [ ] Notifications (email/push/in-app on order status changes — Section 14)
-- [ ] Background jobs — Sidekiq has been running since Sprint 1 with nothing to do;
-      `SendEmailJob`, `DeliveryDelayJob`, `CleanupLogsJob` (Section 15) don't exist yet
+- [ ] Scheduled jobs — `DeliveryDelayJob` (flags orders past `estimated_delivery_at`)
+      and `CleanupLogsJob` (prunes old read notifications) exist and are tested, but
+      nothing triggers them on a recurring schedule yet (no `sidekiq-cron` wiring)
 - [ ] Audit log (Section 18 lists it as a domain entity; nothing writes to it yet —
       this is also what "Orders display complete history" in the acceptance criteria
       implies beyond the tracking-point history that already exists)
@@ -210,8 +222,6 @@ re-read of the spec against the codebase found these remaining gaps:
 - [ ] A real "driver accepts an offered delivery" workflow — today a dispatcher always
       assigns `driver_id` directly; there's no pool of unassigned orders a driver browses
       and claims themselves (User Story: Driver "Accept delivery")
-- [ ] Dispatcher "monitor delays" — no detection/alerting for orders running late
-      against `estimated_delivery_at`
 - [ ] Customer Activity and Monthly rollup reports (Section 19 lists both; only a daily
       deliveries report exists)
 

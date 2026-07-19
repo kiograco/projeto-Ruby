@@ -19,6 +19,13 @@ class Order < ApplicationRecord
     FAILED => []
   }.freeze
 
+  STATUS_EVENTS = {
+    PICKED_UP => Notification::PICKUP_COMPLETE,
+    NEAR_DESTINATION => Notification::NEAR_DESTINATION,
+    DELIVERED => Notification::DELIVERED,
+    FAILED => Notification::FAILED
+  }.freeze
+
   belongs_to :customer
   belongs_to :driver, optional: true
   belongs_to :created_by, class_name: "User", inverse_of: :created_orders
@@ -26,6 +33,7 @@ class Order < ApplicationRecord
   belongs_to :delivery_address, class_name: "Address"
   has_many :order_items, dependent: :destroy
   has_many :tracking_points, dependent: :destroy
+  has_many :notifications, dependent: :destroy
 
   accepts_nested_attributes_for :pickup_address, :delivery_address
   accepts_nested_attributes_for :order_items, allow_destroy: true
@@ -34,8 +42,16 @@ class Order < ApplicationRecord
   validates :total_price, numericality: { greater_than_or_equal_to: 0 }
 
   scope :with_status, ->(status) { where(status: status) if status.present? }
+  scope :overdue, lambda {
+    where.not(status: [ DELIVERED, CANCELLED, FAILED ])
+      .where.not(estimated_delivery_at: nil)
+      .where("estimated_delivery_at < ?", Time.current)
+  }
 
   before_validation :compute_total_price_from_items, on: :create
+
+  after_create :notify_order_created
+  after_update :notify_driver_assigned, if: -> { saved_change_to_driver_id? && driver_id.present? }
 
   def transition_to!(new_status)
     new_status = new_status.to_s
@@ -47,7 +63,11 @@ class Order < ApplicationRecord
 
     attrs = { status: new_status }
     attrs[:delivered_at] = Time.current if new_status == DELIVERED
-    update(attrs)
+
+    return false unless update(attrs)
+
+    notify_status_change(new_status)
+    true
   end
 
   private
@@ -57,5 +77,20 @@ class Order < ApplicationRecord
     return if order_items.empty?
 
     self.total_price = order_items.sum { |item| (item.quantity || 0) * (item.unit_price || 0) }
+  end
+
+  def notify_order_created
+    OrderEventNotifier.notify(self, Notification::ORDER_CREATED, recipients: [ created_by ])
+  end
+
+  def notify_driver_assigned
+    OrderEventNotifier.notify(self, Notification::DRIVER_ASSIGNED, recipients: [ created_by, driver&.user ])
+  end
+
+  def notify_status_change(new_status)
+    event = STATUS_EVENTS[new_status]
+    return unless event
+
+    OrderEventNotifier.notify(self, event, recipients: [ created_by ])
   end
 end

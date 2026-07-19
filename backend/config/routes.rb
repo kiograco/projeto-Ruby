@@ -13,6 +13,8 @@ Rails.application.routes.draw do
     post "auth/logout", to: "auth#logout"
 
     resources :users
+    post "notifications/mark_all_read", to: "notifications#mark_all_read"
+    resources :notifications, only: [ :index, :update ]
     resources :customers
     resources :vehicles
     resources :drivers
