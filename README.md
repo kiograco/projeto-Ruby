@@ -169,3 +169,40 @@ reachable at localhost from your device/simulator.
 
 The production Dockerfile builds and runs independently of `docker-compose.yml`
 (which is dev-only): `docker build -f backend/Dockerfile.production backend`.
+
+## What's left for 100% usability
+
+The 10-sprint MVP roadmap from the spec is done (auth, customers, drivers, vehicles,
+orders, live tracking, dashboard, reports, 99%+ test coverage, CI). These are the
+gaps between that and a fully usable, production-ready system:
+
+### Dashboard pages that are still placeholders
+
+- [ ] Settings
+- [ ] Profile
+
+### Driver app screens that are still placeholders
+
+- [ ] Available Deliveries (browsing/accepting new deliveries)
+- [ ] Navigation
+- [ ] Delivery Confirmation (proof of delivery capture)
+- [ ] History
+
+### Spec features no sprint ever built
+
+- [ ] Notifications (email/push/in-app on order status changes — Section 14)
+- [ ] Audit log (Section 18 lists it as a domain entity; nothing writes to it yet)
+- [ ] File storage / attachments — proof of delivery photos, driver documents,
+      invoices (Section 16)
+- [ ] OpenAPI/Swagger documentation for the API (Section 29)
+
+### Infrastructure
+
+- [ ] A real deploy target — the CI/CD `deploy` job is an explicit placeholder;
+      nothing is actually hosted anywhere yet
+- [ ] Production secrets management (`RAILS_MASTER_KEY`, DB credentials, etc. are
+      dev-only right now)
+
+**Beyond the MVP** (spec Section 26, lower priority than the above) — AI route
+optimization, fraud detection, predictive ETA, delivery clustering, heat maps,
+multi-tenant support, billing/subscriptions.
