@@ -19,6 +19,9 @@ Rails.application.routes.draw do
     post "tracking/location", to: "tracking#create"
     get "tracking/history/:order_id", to: "tracking#history"
     get "tracking/:order_id", to: "tracking#show"
+
+    get "dashboard/overview", to: "dashboard#overview"
+    get "dashboard/realtime", to: "dashboard#realtime"
   end
 
   mount ActionCable.server => "/cable"

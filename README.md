@@ -41,6 +41,11 @@ infra/      nginx reverse-proxy config
   driver app's Current Delivery screen shares location every 5 seconds via
   `expo-location`'s `watchPositionAsync` while a delivery is active, and drives the same
   status-transition flow as the dashboard.
+- **Dashboard** — `/api/dashboard/overview` (active/online drivers, deliveries today,
+  average delivery time, revenue today, pending/completed deliveries) and
+  `/api/dashboard/realtime` (online drivers with live position and current order),
+  both admin/dispatcher only. Dashboard page shows the overview as a stat-tile grid,
+  auto-refreshing every 15 seconds.
 
 ## Prerequisites
 
@@ -108,6 +113,9 @@ DELETE /api/orders/:id
 POST   /api/tracking/location
 GET    /api/tracking/:order_id
 GET    /api/tracking/history/:order_id
+
+GET    /api/dashboard/overview
+GET    /api/dashboard/realtime
 ```
 
 ## Frontend
