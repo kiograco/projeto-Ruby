@@ -1,4 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useAuth } from "../contexts/AuthContext";
 import {
   SplashScreen,
   LoginScreen,
@@ -10,22 +11,47 @@ import {
   ProfileScreen,
   SettingsScreen,
 } from "../screens";
-import type { RootStackParamList } from "./types";
+import type { AppStackParamList, AuthStackParamList } from "./types";
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+const AppStack = createNativeStackNavigator<AppStackParamList>();
 
 export function RootNavigator() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <SplashScreen />;
+  }
+
+  if (!user) {
+    return (
+      <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+        <AuthStack.Screen name="Login" component={LoginScreen} />
+      </AuthStack.Navigator>
+    );
+  }
+
   return (
-    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Splash" component={SplashScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="AvailableDeliveries" component={AvailableDeliveriesScreen} options={{ headerShown: true }} />
-      <Stack.Screen name="CurrentDelivery" component={CurrentDeliveryScreen} options={{ headerShown: true }} />
-      <Stack.Screen name="Navigation" component={NavigationScreen} options={{ headerShown: true }} />
-      <Stack.Screen name="DeliveryConfirmation" component={DeliveryConfirmationScreen} options={{ headerShown: true }} />
-      <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true }} />
-      <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: true }} />
-      <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: true }} />
-    </Stack.Navigator>
+    <AppStack.Navigator initialRouteName="AvailableDeliveries">
+      <AppStack.Screen
+        name="AvailableDeliveries"
+        component={AvailableDeliveriesScreen}
+        options={{ title: "Available Deliveries" }}
+      />
+      <AppStack.Screen
+        name="CurrentDelivery"
+        component={CurrentDeliveryScreen}
+        options={{ title: "Current Delivery" }}
+      />
+      <AppStack.Screen name="Navigation" component={NavigationScreen} />
+      <AppStack.Screen
+        name="DeliveryConfirmation"
+        component={DeliveryConfirmationScreen}
+        options={{ title: "Delivery Confirmation" }}
+      />
+      <AppStack.Screen name="History" component={HistoryScreen} />
+      <AppStack.Screen name="Profile" component={ProfileScreen} />
+      <AppStack.Screen name="Settings" component={SettingsScreen} />
+    </AppStack.Navigator>
   );
 }

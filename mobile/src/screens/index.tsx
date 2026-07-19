@@ -2,6 +2,7 @@ import { PlaceholderScreen } from "./PlaceholderScreen";
 
 export { SplashScreen } from "./SplashScreen";
 export { LoginScreen } from "./LoginScreen";
+export { ProfileScreen } from "./ProfileScreen";
 
 export function AvailableDeliveriesScreen() {
   return <PlaceholderScreen title="Available Deliveries" />;
@@ -21,10 +22,6 @@ export function DeliveryConfirmationScreen() {
 
 export function HistoryScreen() {
   return <PlaceholderScreen title="History" />;
-}
-
-export function ProfileScreen() {
-  return <PlaceholderScreen title="Profile" />;
 }
 
 export function SettingsScreen() {

@@ -1,6 +1,8 @@
-export type RootStackParamList = {
-  Splash: undefined;
+export type AuthStackParamList = {
   Login: undefined;
+};
+
+export type AppStackParamList = {
   AvailableDeliveries: undefined;
   CurrentDelivery: { orderId: string };
   Navigation: { orderId: string };

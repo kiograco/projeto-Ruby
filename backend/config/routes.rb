@@ -5,6 +5,11 @@ Rails.application.routes.draw do
 
   namespace :api do
     get "health", to: "health#show"
+    get "me", to: "me#show"
+
+    post "auth/login", to: "auth#login"
+    post "auth/refresh", to: "auth#refresh"
+    post "auth/logout", to: "auth#logout"
   end
 
   mount ActionCable.server => "/cable"

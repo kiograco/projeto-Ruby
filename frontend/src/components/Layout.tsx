@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard" },
@@ -13,11 +14,19 @@ const NAV_ITEMS = [
 ];
 
 export function Layout() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <aside className="w-56 shrink-0 border-r border-gray-200 bg-white">
+      <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
         <div className="px-4 py-4 text-lg font-semibold text-gray-900">Delivery Tracker</div>
-        <nav className="flex flex-col gap-1 px-2">
+        <nav className="flex flex-1 flex-col gap-1 px-2">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
@@ -32,6 +41,17 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="border-t border-gray-200 p-3">
+          <div className="px-1 text-sm font-medium text-gray-900">{user?.name}</div>
+          <div className="px-1 text-xs text-gray-500 capitalize">{user?.role}</div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-2 w-full rounded px-3 py-2 text-left text-sm font-medium text-gray-600 hover:bg-gray-100"
+          >
+            Log out
+          </button>
+        </div>
       </aside>
       <main className="flex-1">
         <Outlet />

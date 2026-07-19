@@ -24,8 +24,11 @@ infra/      nginx reverse-proxy config
 
 ```bash
 docker compose up -d          # postgres, redis, api, sidekiq, nginx, mailhog
-docker compose run --rm api bundle exec rails db:create db:migrate
+docker compose run --rm api bundle exec rails db:create db:migrate db:seed
 ```
+
+`db:seed` creates the four roles (admin/dispatcher/driver/customer) and, in development,
+a default admin user: `admin@deliverytracker.dev` / `password123`.
 
 - API: http://localhost:3000 (proxied via nginx at http://localhost:8080)
 - Health check: `GET /api/health`
@@ -63,5 +66,14 @@ reachable at localhost from your device/simulator.
 
 ## Status
 
-Sprint 1 (project setup) per the spec's MVP roadmap: infra, folder structure, and
-placeholder pages/screens are in place. Sprint 2 (authentication) is next.
+Per the spec's MVP roadmap:
+
+- **Sprint 1** (project setup) — infra, folder structure, placeholder pages/screens.
+- **Sprint 2** (authentication) — JWT access tokens (15min) + rotating refresh tokens
+  (30 days), account lockout after 5 failed attempts, role-based `User`/`Role` model,
+  `POST /api/auth/{login,refresh,logout}` and `GET /api/me`. Wired end-to-end in the
+  React dashboard (login → protected routes → logout) and the Expo driver app
+  (login → authenticated stack → logout), both with automatic access-token refresh
+  on 401.
+
+Sprint 3 (customers) is next.

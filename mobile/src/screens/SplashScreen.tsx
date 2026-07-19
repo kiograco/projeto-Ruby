@@ -1,22 +1,10 @@
-import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/types";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
-
-export function SplashScreen({ navigation }: Props) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace("Login");
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [navigation]);
-
+export function SplashScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Delivery Tracker</Text>
-      <ActivityIndicator style={styles.spinner} />
+      <ActivityIndicator style={styles.spinner} color="#fff" />
     </View>
   );
 }
