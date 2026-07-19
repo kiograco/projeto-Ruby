@@ -4,6 +4,8 @@ import { PlaceholderPage } from "../components/PlaceholderPage";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { LoginPage } from "../pages/LoginPage";
 import { CustomersPage } from "../pages/CustomersPage";
+import { DriversPage } from "../pages/DriversPage";
+import { VehiclesPage } from "../pages/VehiclesPage";
 
 export function AppRoutes() {
   return (
@@ -14,8 +16,8 @@ export function AppRoutes() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<PlaceholderPage title="Dashboard" />} />
           <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/drivers" element={<PlaceholderPage title="Drivers" />} />
-          <Route path="/vehicles" element={<PlaceholderPage title="Vehicles" />} />
+          <Route path="/drivers" element={<DriversPage />} />
+          <Route path="/vehicles" element={<VehiclesPage />} />
           <Route path="/orders" element={<PlaceholderPage title="Orders" />} />
           <Route path="/tracking" element={<PlaceholderPage title="Tracking" />} />
           <Route path="/reports" element={<PlaceholderPage title="Reports" />} />

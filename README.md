@@ -21,6 +21,11 @@ infra/      nginx reverse-proxy config
 - **Customers** — full CRUD (`/api/customers`) with search and pagination, restricted by
   role (admin manages, dispatcher has read access). Backed by a dashboard page with a
   searchable, paginated table and create/edit/delete forms.
+- **Vehicles** — full CRUD (`/api/vehicles`) with search and pagination, same admin/
+  dispatcher access split, dashboard page to match.
+- **Drivers** — full CRUD (`/api/drivers`); creating a driver also creates its underlying
+  user account (role `driver`) atomically. Drivers can see and manage their own record;
+  admin/dispatcher see all. Dashboard page assigns a vehicle and status per driver.
 
 ## Prerequisites
 
@@ -66,6 +71,18 @@ POST   /api/customers
 GET    /api/customers/:id
 PUT    /api/customers/:id
 DELETE /api/customers/:id
+
+GET    /api/vehicles
+POST   /api/vehicles
+GET    /api/vehicles/:id
+PUT    /api/vehicles/:id
+DELETE /api/vehicles/:id
+
+GET    /api/drivers
+POST   /api/drivers
+GET    /api/drivers/:id
+PUT    /api/drivers/:id
+DELETE /api/drivers/:id
 ```
 
 ## Frontend

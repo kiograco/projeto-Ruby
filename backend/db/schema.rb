@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_140001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "postgis"
@@ -24,6 +24,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
     t.datetime "updated_at", null: false
     t.index ["document"], name: "index_customers_on_document", unique: true
     t.index ["email"], name: "index_customers_on_email", unique: true
+  end
+
+  create_table "drivers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "current_latitude", precision: 10, scale: 6
+    t.decimal "current_longitude", precision: 10, scale: 6
+    t.string "license_number", null: false
+    t.string "status", default: "offline", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "vehicle_id"
+    t.index ["license_number"], name: "index_drivers_on_license_number", unique: true
+    t.index ["user_id"], name: "index_drivers_on_user_id", unique: true
+    t.index ["vehicle_id"], name: "index_drivers_on_vehicle_id"
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -60,6 +74,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
     t.index ["role_id"], name: "index_users_on_role_id"
   end
 
+  create_table "vehicles", force: :cascade do |t|
+    t.decimal "capacity", precision: 10, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.string "model", null: false
+    t.string "plate", null: false
+    t.datetime "updated_at", null: false
+    t.string "vehicle_type", null: false
+    t.integer "year", null: false
+    t.index ["plate"], name: "index_vehicles_on_plate", unique: true
+  end
+
+  add_foreign_key "drivers", "users"
+  add_foreign_key "drivers", "vehicles"
   add_foreign_key "refresh_tokens", "users"
   add_foreign_key "users", "roles"
 end

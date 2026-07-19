@@ -6,6 +6,7 @@ class User < ApplicationRecord
 
   belongs_to :role
   has_many :refresh_tokens, dependent: :destroy
+  has_one :driver, dependent: :destroy
 
   before_validation { self.email = email&.downcase&.strip }
 

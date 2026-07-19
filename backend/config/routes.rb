@@ -12,6 +12,8 @@ Rails.application.routes.draw do
     post "auth/logout", to: "auth#logout"
 
     resources :customers
+    resources :vehicles
+    resources :drivers
   end
 
   mount ActionCable.server => "/cable"
