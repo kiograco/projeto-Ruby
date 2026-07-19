@@ -1,15 +1,16 @@
-FROM ruby:3.3-slim
+FROM ruby:3.3.12-slim
 
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
       build-essential \
       libpq-dev \
       libvips \
+      libyaml-dev \
       git \
       curl \
       pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-RUN gem install bundler rails -v "~> 8.0" --no-document
+RUN gem install bundler --no-document
 
 WORKDIR /app
 
@@ -19,4 +20,4 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 EXPOSE 3000
 
 ENTRYPOINT ["entrypoint.sh"]
-CMD ["rails", "server", "-b", "0.0.0.0"]
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

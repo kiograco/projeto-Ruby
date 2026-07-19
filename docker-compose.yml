@@ -30,7 +30,8 @@ services:
   api:
     build:
       context: ./backend
-    command: ["rails", "server", "-b", "0.0.0.0"]
+      dockerfile: Dockerfile.dev
+    command: ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
     volumes:
       - ./backend:/app
       - api_bundle:/usr/local/bundle
@@ -38,8 +39,12 @@ services:
       - "3000:3000"
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgres://delivery_tracker:delivery_tracker@postgres:5432/delivery_tracker_development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USERNAME: delivery_tracker
+      DATABASE_PASSWORD: delivery_tracker
       REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: http://localhost:5173
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,13 +56,17 @@ services:
   sidekiq:
     build:
       context: ./backend
+      dockerfile: Dockerfile.dev
     command: ["bundle", "exec", "sidekiq"]
     volumes:
       - ./backend:/app
       - api_bundle:/usr/local/bundle
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgres://delivery_tracker:delivery_tracker@postgres:5432/delivery_tracker_development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USERNAME: delivery_tracker
+      DATABASE_PASSWORD: delivery_tracker
       REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:

@@ -1,0 +1,23 @@
+# PostgreSQL + PostGIS. See docker-compose.yml for the local service definition.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
+  port: <%= ENV.fetch("DATABASE_PORT") { 5432 } %>
+  username: <%= ENV.fetch("DATABASE_USERNAME") { "delivery_tracker" } %>
+  password: <%= ENV.fetch("DATABASE_PASSWORD") { "delivery_tracker" } %>
+
+development:
+  <<: *default
+  database: delivery_tracker_development
+
+test:
+  <<: *default
+  database: delivery_tracker_test
+
+production:
+  <<: *default
+  database: delivery_tracker_production
+  username: <%= ENV["DATABASE_USERNAME"] %>
+  password: <%= ENV["DATABASE_PASSWORD"] %>

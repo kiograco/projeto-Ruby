@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+
+# The api/sidekiq containers run with RAILS_ENV=development so that env var
+# leaks into `docker compose run`. Force test here so specs never run
+# against the dev host-allowlist/database by accident.
+export RAILS_ENV=test
+
+bundle exec rspec "$@"
