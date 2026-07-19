@@ -3,6 +3,7 @@ import { Layout } from "../components/Layout";
 import { PlaceholderPage } from "../components/PlaceholderPage";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { LoginPage } from "../pages/LoginPage";
+import { CustomersPage } from "../pages/CustomersPage";
 
 export function AppRoutes() {
   return (
@@ -12,7 +13,7 @@ export function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<PlaceholderPage title="Dashboard" />} />
-          <Route path="/customers" element={<PlaceholderPage title="Customers" />} />
+          <Route path="/customers" element={<CustomersPage />} />
           <Route path="/drivers" element={<PlaceholderPage title="Drivers" />} />
           <Route path="/vehicles" element={<PlaceholderPage title="Vehicles" />} />
           <Route path="/orders" element={<PlaceholderPage title="Orders" />} />

@@ -12,6 +12,16 @@ mobile/     Expo (React Native + TypeScript) driver app
 infra/      nginx reverse-proxy config
 ```
 
+## Features
+
+- **Authentication** — JWT access tokens (15min) with rotating refresh tokens (30 days),
+  account lockout after 5 failed login attempts, role-based users (admin/dispatcher/driver/
+  customer). Login, session refresh, and logout work end-to-end in both the React dashboard
+  and the Expo driver app.
+- **Customers** — full CRUD (`/api/customers`) with search and pagination, restricted by
+  role (admin manages, dispatcher has read access). Backed by a dashboard page with a
+  searchable, paginated table and create/edit/delete forms.
+
 ## Prerequisites
 
 - Docker Desktop (the Rails API, Postgres, Redis, Sidekiq, and nginx all run in containers —
@@ -43,6 +53,21 @@ docker compose run --rm api bin/test
 docker compose run --rm api bundle exec rubocop
 ```
 
+### API endpoints
+
+```text
+POST   /api/auth/login
+POST   /api/auth/refresh
+POST   /api/auth/logout
+GET    /api/me
+
+GET    /api/customers
+POST   /api/customers
+GET    /api/customers/:id
+PUT    /api/customers/:id
+DELETE /api/customers/:id
+```
+
 ## Frontend
 
 ```bash
@@ -61,17 +86,3 @@ npm start         # Expo dev server — scan the QR code with Expo Go, or press 
 
 Set `EXPO_PUBLIC_API_URL` (defaults to `http://localhost:3000/api`) if the API isn't
 reachable at localhost from your device/simulator.
-
-## Status
-
-Per the spec's MVP roadmap:
-
-- **Sprint 1** (project setup) — infra, folder structure, placeholder pages/screens.
-- **Sprint 2** (authentication) — JWT access tokens (15min) + rotating refresh tokens
-  (30 days), account lockout after 5 failed attempts, role-based `User`/`Role` model,
-  `POST /api/auth/{login,refresh,logout}` and `GET /api/me`. Wired end-to-end in the
-  React dashboard (login → protected routes → logout) and the Expo driver app
-  (login → authenticated stack → logout), both with automatic access-token refresh
-  on 401.
-
-Sprint 3 (customers) is next.

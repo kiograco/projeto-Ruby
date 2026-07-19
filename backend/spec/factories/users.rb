@@ -7,6 +7,10 @@ FactoryBot.define do
     active { true }
     role { create(:role, :admin) }
 
+    trait :admin do
+      role { create(:role, :admin) }
+    end
+
     trait :dispatcher do
       role { create(:role, :dispatcher) }
     end
