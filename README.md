@@ -154,3 +154,18 @@ npm start         # Expo dev server — scan the QR code with Expo Go, or press 
 
 Set `EXPO_PUBLIC_API_URL` (defaults to `http://localhost:3000/api`) if the API isn't
 reachable at localhost from your device/simulator.
+
+## CI/CD
+
+`.github/workflows/ci.yml` runs on every push/PR to `main`:
+
+1. **Lint** — Rubocop.
+2. **Test** — RSpec against real Postgres (PostGIS) and Redis service containers.
+3. **Build** — frontend and mobile typecheck, frontend production build.
+4. **Docker publish** *(main only)* — builds `backend/Dockerfile.production` and
+   pushes it to GHCR, tagged `latest` and by commit SHA.
+5. **Deploy** *(main only)* — placeholder step; no hosting target is configured yet.
+   Wire it to whatever you provision (Railway/Render/AWS/Fly) via repository secrets.
+
+The production Dockerfile builds and runs independently of `docker-compose.yml`
+(which is dev-only): `docker build -f backend/Dockerfile.production backend`.
