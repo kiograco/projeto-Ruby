@@ -32,6 +32,25 @@ RSpec.describe "Api::Vehicles", type: :request do
     end
   end
 
+  describe "GET /api/vehicles/:id" do
+    it "returns the vehicle for an admin" do
+      vehicle = create(:vehicle)
+
+      get "/api/vehicles/#{vehicle.id}", headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["id"]).to eq(vehicle.id)
+    end
+
+    it "forbids a driver" do
+      vehicle = create(:vehicle)
+
+      get "/api/vehicles/#{vehicle.id}", headers: auth_headers(driver_user)
+
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
   describe "POST /api/vehicles" do
     let(:valid_params) { { plate: "ABC-1234", model: "Sprinter", year: 2023, vehicle_type: "van", capacity: 1000 } }
 
@@ -62,6 +81,14 @@ RSpec.describe "Api::Vehicles", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(vehicle.reload.model).to eq("Updated Model")
+    end
+
+    it "returns validation errors" do
+      vehicle = create(:vehicle)
+
+      put "/api/vehicles/#{vehicle.id}", params: { vehicle_type: "spaceship" }, headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

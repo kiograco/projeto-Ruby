@@ -84,6 +84,14 @@ docker compose run --rm api bin/test
 docker compose run --rm api bundle exec rubocop
 ```
 
+Add `-e COVERAGE=1` to generate a SimpleCov report at `backend/coverage/index.html`
+(151 examples, 99%+ line coverage — the only gaps are empty Rails boilerplate that
+nothing in the app calls yet, like `ApplicationMailer`):
+
+```bash
+docker compose run --rm -e COVERAGE=1 api bin/test
+```
+
 ### API endpoints
 
 ```text

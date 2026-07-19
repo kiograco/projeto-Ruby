@@ -26,6 +26,18 @@ RSpec.describe "Api::Tracking", type: :request do
       expect(order.tracking_points.count).to eq(1)
     end
 
+    it "returns validation errors for an out-of-range coordinate" do
+      driver = create(:driver)
+      order = create(:order, customer: customer, driver: driver, status: "assigned")
+
+      post "/api/tracking/location",
+           params: { order_id: order.id, latitude: 200, longitude: -46.6 },
+           headers: auth_headers(driver.user)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body)["errors"]).to be_present
+    end
+
     it "forbids a driver from reporting location for an order they are not assigned to" do
       driver = create(:driver)
       order = create(:order, customer: customer)

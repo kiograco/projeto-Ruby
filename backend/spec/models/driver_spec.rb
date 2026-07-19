@@ -45,4 +45,16 @@ RSpec.describe Driver, type: :model do
       expect(Driver.online).to contain_exactly(online_driver)
     end
   end
+
+  describe ".search" do
+    it "matches by user name, email, or license number" do
+      match = create(:driver, license_number: "LIC-999")
+      match.user.update!(name: "Carlos Souza", email: "carlos@example.com")
+      create(:driver)
+
+      expect(Driver.search("Carlos")).to contain_exactly(match)
+      expect(Driver.search("LIC-999")).to contain_exactly(match)
+      expect(Driver.search("carlos@example.com")).to contain_exactly(match)
+    end
+  end
 end

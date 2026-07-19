@@ -58,6 +58,24 @@ RSpec.describe "Api::Orders", type: :request do
       expect(response).to have_http_status(:created)
       expect(JSON.parse(response.body)["total_price"]).to eq(30.0)
     end
+
+    it "returns validation errors" do
+      post "/api/orders", params: valid_params.except(:customer_id), headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body)["errors"]).to be_present
+    end
+  end
+
+  describe "GET /api/orders/:id" do
+    it "returns the order for admin" do
+      order = create(:order, customer: customer)
+
+      get "/api/orders/#{order.id}", headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["id"]).to eq(order.id)
+    end
   end
 
   describe "GET /api/orders" do

@@ -121,6 +121,14 @@ RSpec.describe "Api::Customers", type: :request do
 
       expect(response).to have_http_status(:forbidden)
     end
+
+    it "returns validation errors" do
+      customer = create(:customer)
+
+      put "/api/customers/#{customer.id}", params: { email: "not-an-email" }, headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
   end
 
   describe "DELETE /api/customers/:id" do

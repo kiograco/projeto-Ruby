@@ -99,6 +99,16 @@ RSpec.describe "Api::Drivers", type: :request do
       expect(driver.reload.status).to eq("available")
       expect(driver.vehicle).to eq(vehicle)
     end
+
+    it "returns validation errors" do
+      driver = create(:driver)
+      other_driver = create(:driver)
+
+      put "/api/drivers/#{driver.id}", params: { license_number: other_driver.license_number },
+                                        headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
   end
 
   describe "DELETE /api/drivers/:id" do

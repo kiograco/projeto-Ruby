@@ -5,8 +5,4 @@ class Address < ApplicationRecord
   validates :city, presence: true
   validates :state, presence: true
   validates :zip_code, presence: true
-
-  def to_s
-    "#{street}, #{number}#{" - #{complement}" if complement.present?}, #{neighborhood}, #{city}/#{state}"
-  end
 end

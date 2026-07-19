@@ -12,6 +12,17 @@
 # the additional setup, and require it from the spec files that actually need
 # it.
 #
+if ENV["COVERAGE"]
+  require "simplecov"
+  SimpleCov.start "rails" do
+    skip "/spec/"
+    group "Services", "app/services"
+    group "Policies", "app/policies"
+    group "Serializers", "app/serializers"
+    group "Channels", "app/channels"
+  end
+end
+
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
