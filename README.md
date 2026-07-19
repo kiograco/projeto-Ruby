@@ -41,16 +41,23 @@ infra/      nginx reverse-proxy config
   orders. Dashboard page filters by status, assigns drivers, and drives status transitions.
   A proof-of-delivery file can be attached per order (`POST /api/orders/:id/proof_of_delivery`,
   Active Storage) by the assigned driver or admin/dispatcher, uploaded and viewed from the
-  order's History panel.
+  order's History panel. Drivers can also browse unassigned pending orders
+  (`GET /api/orders/available`) and self-assign one (`POST /api/orders/:id/accept`), rather
+  than only receiving orders a dispatcher assigns to them.
 - **Live tracking** — drivers post GPS coordinates to `/api/tracking/location`, which
   updates the driver's current position and broadcasts the point over ActionCable
   (`DeliveryTrackingChannel`, authenticated via a JWT passed as a `?token=` query param
   on the websocket connection). The dashboard's Tracking page renders a Leaflet map that
   updates live as points arrive — driver marker, destination marker, route polyline,
-  speed, and straight-line distance remaining — with no polling or page reload. The Expo
-  driver app's Current Delivery screen shares location every 5 seconds via
-  `expo-location`'s `watchPositionAsync` while a delivery is active, and drives the same
-  status-transition flow as the dashboard.
+  speed, straight-line distance remaining, and an ETA (distance ÷ current or a fallback
+  average speed) — with no polling or page reload. The Expo driver app's Current Delivery
+  screen shares location every 5 seconds via `expo-location`'s `watchPositionAsync` while
+  a delivery is active, and drives the same status-transition flow as the dashboard.
+- **Driver app screens** — beyond Current Delivery, the Expo app has: Available Deliveries
+  (browse unassigned orders, accept one), Navigation (distance/ETA to the destination plus
+  an "Open in Maps" deep link), Delivery Confirmation (capture or pick a photo, upload it
+  as proof of delivery, then mark the order delivered), and History (past delivered/
+  cancelled/failed orders). A bottom tab bar ties the four main screens together.
 - **Dashboard** — `/api/dashboard/overview` (active/online drivers, deliveries today,
   average delivery time, revenue today, pending/completed deliveries) and
   `/api/dashboard/realtime` (online drivers with live position and current order),
@@ -172,6 +179,8 @@ POST   /api/notifications/mark_all_read
 
 GET    /api/orders/:id/timeline   (audit trail: created, driver assigned, status changes)
 POST   /api/orders/:id/proof_of_delivery   (multipart file upload)
+GET    /api/orders/available      (unassigned pending orders, for drivers to browse)
+POST   /api/orders/:id/accept     (driver self-assigns an available order)
 
 POST   /api/drivers/:id/documents                (multipart file upload)
 DELETE /api/drivers/:id/documents/:document_id
@@ -217,13 +226,6 @@ The 10-sprint MVP roadmap from the spec is done (auth, users, customers, drivers
 vehicles, orders, live tracking, dashboard, reports, 99%+ test coverage, CI). A full
 re-read of the spec against the codebase found these remaining gaps:
 
-### Driver app screens that are still placeholders
-
-- [ ] Available Deliveries (browsing/accepting new deliveries)
-- [ ] Navigation
-- [ ] Delivery Confirmation (proof of delivery capture)
-- [ ] History
-
 ### Spec features no sprint ever built
 
 - [ ] Scheduled jobs — `DeliveryDelayJob` (flags orders past `estimated_delivery_at`)
@@ -236,13 +238,11 @@ re-read of the spec against the codebase found these remaining gaps:
 - [ ] Active Storage variant/thumbnail generation for uploaded images — files
       are stored and served as-is, no resizing
 - [ ] OpenAPI/Swagger documentation for the API (Section 29)
-- [ ] ETA on the tracking map (Section 13) — only straight-line distance is shown today,
-      not a time estimate
-- [ ] A real "driver accepts an offered delivery" workflow — today a dispatcher always
-      assigns `driver_id` directly; there's no pool of unassigned orders a driver browses
-      and claims themselves (User Story: Driver "Accept delivery")
 - [ ] Customer Activity and Monthly rollup reports (Section 19 lists both; only a daily
       deliveries report exists)
+- [ ] Real turn-by-turn navigation — the driver app's Navigation screen shows straight-line
+      distance/ETA and an "Open in Maps" deep link to the device's own maps app, not
+      in-app routing (no `react-native-maps`/routing API integration)
 
 ### Infrastructure
 

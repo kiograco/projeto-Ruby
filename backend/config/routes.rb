@@ -24,9 +24,13 @@ Rails.application.routes.draw do
       end
     end
     resources :orders do
+      collection do
+        get :available
+      end
       member do
         get :timeline
         post :proof_of_delivery
+        post :accept
       end
     end
 

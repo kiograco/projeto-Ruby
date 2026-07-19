@@ -19,6 +19,15 @@ class OrderPolicy < ApplicationPolicy
     admin?
   end
 
+  def available?
+    user && [ Role::ADMIN, Role::DISPATCHER, Role::DRIVER ].include?(user.role.name)
+  end
+
+  def accept?
+    user && user.role.name == Role::DRIVER && user.driver.present? &&
+      record.driver_id.nil? && record.status == Order::PENDING
+  end
+
   class Scope < Scope
     def resolve
       return scope.all if admin_or_dispatcher?

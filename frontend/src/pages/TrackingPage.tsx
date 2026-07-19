@@ -83,6 +83,12 @@ export function TrackingPage() {
       ? haversineKm(latest.latitude, latest.longitude, destination!.latitude!, destination!.longitude!)
       : null;
 
+  // Straight-line ETA: uses the driver's current reported speed when it's fast enough
+  // to be meaningful, otherwise falls back to a typical urban average (25 km/h).
+  const FALLBACK_SPEED_KMH = 25;
+  const effectiveSpeedKmh = latest?.speed != null && latest.speed > 2 ? latest.speed : FALLBACK_SPEED_KMH;
+  const etaMinutes = distanceKm != null ? Math.round((distanceKm / effectiveSpeedKmh) * 60) : null;
+
   return (
     <div className="p-6">
       <h1 className="mb-4 text-2xl font-semibold text-gray-900">Tracking</h1>
@@ -107,6 +113,9 @@ export function TrackingPage() {
           </span>
           {latest?.speed != null && <span>Speed: {latest.speed} km/h</span>}
           {distanceKm != null && <span>Distance remaining: {distanceKm.toFixed(1)} km</span>}
+          {etaMinutes != null && (
+            <span title="Straight-line estimate based on current speed">ETA: ~{etaMinutes} min</span>
+          )}
           {!latest && <span className="text-gray-400">Waiting for the driver's first location update…</span>}
         </div>
       )}

@@ -1,7 +1,7 @@
 module Api
   class OrdersController < ApplicationController
     before_action :authenticate_user!
-    before_action :set_order, only: [ :show, :update, :destroy, :timeline, :proof_of_delivery ]
+    before_action :set_order, only: [ :show, :update, :destroy, :timeline, :proof_of_delivery, :accept ]
 
     def index
       authorize Order
@@ -9,6 +9,21 @@ module Api
         .includes(:customer, :driver, :pickup_address, :delivery_address, :order_items)
         .order(created_at: :desc)
       scope = scope.with_status(params[:status])
+      pagy_object, orders = pagy(:offset, scope, limit: 20, max_limit: 100)
+
+      render json: {
+        orders: orders.map { |o| OrderSerializer.new(o).as_json },
+        meta: pagy_meta(pagy_object)
+      }
+    end
+
+    # Unassigned, pending orders any driver can browse and claim — distinct from
+    # #index, which (for a driver) is scoped to orders already assigned to them.
+    def available
+      authorize Order, :available?
+      scope = Order.where(status: Order::PENDING, driver_id: nil)
+        .includes(:customer, :pickup_address, :delivery_address, :order_items)
+        .order(created_at: :asc)
       pagy_object, orders = pagy(:offset, scope, limit: 20, max_limit: 100)
 
       render json: {
@@ -68,6 +83,15 @@ module Api
       return render json: { errors: [ "file is required" ] }, status: :unprocessable_content if params[:file].blank?
 
       @order.proof_of_delivery.attach(params[:file])
+      render json: OrderSerializer.new(@order.reload).as_json
+    end
+
+    def accept
+      authorize @order, :accept?
+
+      @order.driver = current_user.driver
+      @order.save!
+      @order.transition_to!(Order::ASSIGNED)
       render json: OrderSerializer.new(@order.reload).as_json
     end
 

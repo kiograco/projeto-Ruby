@@ -4,9 +4,9 @@ export type AuthStackParamList = {
 
 export type AppStackParamList = {
   AvailableDeliveries: undefined;
-  CurrentDelivery: { orderId: string };
-  Navigation: { orderId: string };
-  DeliveryConfirmation: { orderId: string };
+  CurrentDelivery: undefined;
+  Navigation: undefined;
+  DeliveryConfirmation: undefined;
   History: undefined;
   Profile: undefined;
   Settings: undefined;

@@ -238,6 +238,59 @@ RSpec.describe "Api::Orders", type: :request do
     end
   end
 
+  describe "GET /api/orders/available" do
+    it "lists unassigned pending orders for a driver" do
+      driver = create(:driver)
+      pending = create(:order, customer: customer)
+      create(:order, customer: customer, driver: create(:driver)) # already assigned
+      cancelled = create(:order, customer: customer)
+      cancelled.transition_to!("cancelled")
+
+      get "/api/orders/available", headers: auth_headers(driver.user)
+
+      expect(response).to have_http_status(:ok)
+      ids = JSON.parse(response.body)["orders"].map { |o| o["id"] }
+      expect(ids).to contain_exactly(pending.id)
+    end
+
+    it "forbids a customer-role user" do
+      get "/api/orders/available", headers: auth_headers(customer_user)
+
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  describe "POST /api/orders/:id/accept" do
+    it "assigns the driver and transitions the order to assigned" do
+      driver = create(:driver)
+      order = create(:order, customer: customer)
+
+      post "/api/orders/#{order.id}/accept", headers: auth_headers(driver.user)
+
+      expect(response).to have_http_status(:ok)
+      order.reload
+      expect(order.driver).to eq(driver)
+      expect(order.status).to eq("assigned")
+    end
+
+    it "forbids accepting an order that already has a driver" do
+      driver = create(:driver)
+      order = create(:order, customer: customer, driver: create(:driver))
+
+      post "/api/orders/#{order.id}/accept", headers: auth_headers(driver.user)
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "forbids a non-driver from accepting" do
+      order = create(:order, customer: customer)
+
+      post "/api/orders/#{order.id}/accept", headers: auth_headers(dispatcher)
+
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
   describe "DELETE /api/orders/:id" do
     it "allows admin to delete an order" do
       order = create(:order, customer: customer)

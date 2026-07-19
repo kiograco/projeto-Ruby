@@ -20,6 +20,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to attach a delivery proof.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to capture a delivery proof."
+        }
+      ]
+    ]
   }
 }
