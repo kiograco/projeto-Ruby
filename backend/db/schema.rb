@@ -10,10 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_140001) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_160002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "postgis"
+
+  create_table "addresses", force: :cascade do |t|
+    t.string "city", null: false
+    t.string "complement"
+    t.datetime "created_at", null: false
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "neighborhood", null: false
+    t.string "number", null: false
+    t.string "state", null: false
+    t.string "street", null: false
+    t.datetime "updated_at", null: false
+    t.string "zip_code", null: false
+  end
 
   create_table "customers", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -38,6 +52,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_140001) do
     t.index ["license_number"], name: "index_drivers_on_license_number", unique: true
     t.index ["user_id"], name: "index_drivers_on_user_id", unique: true
     t.index ["vehicle_id"], name: "index_drivers_on_vehicle_id"
+  end
+
+  create_table "order_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", null: false
+    t.bigint "order_id", null: false
+    t.integer "quantity", default: 1, null: false
+    t.decimal "unit_price", precision: 10, scale: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_order_items_on_order_id"
+  end
+
+  create_table "orders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.bigint "customer_id", null: false
+    t.datetime "delivered_at"
+    t.bigint "delivery_address_id", null: false
+    t.bigint "driver_id"
+    t.datetime "estimated_delivery_at"
+    t.bigint "pickup_address_id", null: false
+    t.string "status", default: "pending", null: false
+    t.decimal "total_price", precision: 10, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_orders_on_created_by_id"
+    t.index ["customer_id"], name: "index_orders_on_customer_id"
+    t.index ["delivery_address_id"], name: "index_orders_on_delivery_address_id"
+    t.index ["driver_id"], name: "index_orders_on_driver_id"
+    t.index ["pickup_address_id"], name: "index_orders_on_pickup_address_id"
+    t.index ["status"], name: "index_orders_on_status"
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -87,6 +131,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_140001) do
 
   add_foreign_key "drivers", "users"
   add_foreign_key "drivers", "vehicles"
+  add_foreign_key "order_items", "orders"
+  add_foreign_key "orders", "addresses", column: "delivery_address_id"
+  add_foreign_key "orders", "addresses", column: "pickup_address_id"
+  add_foreign_key "orders", "customers"
+  add_foreign_key "orders", "drivers"
+  add_foreign_key "orders", "users", column: "created_by_id"
   add_foreign_key "refresh_tokens", "users"
   add_foreign_key "users", "roles"
 end

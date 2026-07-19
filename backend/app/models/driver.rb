@@ -4,6 +4,7 @@ class Driver < ApplicationRecord
 
   belongs_to :user
   belongs_to :vehicle, optional: true
+  has_many :orders, dependent: :nullify
 
   validates :license_number, presence: true, uniqueness: true
   validate :user_has_driver_role

@@ -26,6 +26,12 @@ infra/      nginx reverse-proxy config
 - **Drivers** — full CRUD (`/api/drivers`); creating a driver also creates its underlying
   user account (role `driver`) atomically. Drivers can see and manage their own record;
   admin/dispatcher see all. Dashboard page assigns a vehicle and status per driver.
+- **Orders** — `/api/orders` with nested pickup/delivery addresses and line items created
+  in one request, a validated status flow (pending → assigned → picked_up → in_transit →
+  near_destination → delivered, with cancelled/failed as terminal off-ramps — invalid
+  transitions are rejected), and role-scoped access: admin/dispatcher manage everything,
+  drivers see and progress only their assigned orders, customer-role users can create
+  orders. Dashboard page filters by status, assigns drivers, and drives status transitions.
 
 ## Prerequisites
 
@@ -83,6 +89,12 @@ POST   /api/drivers
 GET    /api/drivers/:id
 PUT    /api/drivers/:id
 DELETE /api/drivers/:id
+
+GET    /api/orders
+POST   /api/orders
+GET    /api/orders/:id
+PATCH  /api/orders/:id
+DELETE /api/orders/:id
 ```
 
 ## Frontend

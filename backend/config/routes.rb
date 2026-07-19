@@ -14,6 +14,7 @@ Rails.application.routes.draw do
     resources :customers
     resources :vehicles
     resources :drivers
+    resources :orders
   end
 
   mount ActionCable.server => "/cable"
