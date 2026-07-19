@@ -1,0 +1,50 @@
+# --- Root ---
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+Delivery_Tracker_Master_AI_Specification.md
+
+# --- Ruby / Rails (backend) ---
+backend/.bundle/
+backend/log/*
+!backend/log/.keep
+backend/tmp/*
+!backend/tmp/.keep
+backend/storage/*
+!backend/storage/.keep
+backend/config/master.key
+backend/config/credentials/*.key
+backend/public/assets
+backend/public/packs
+backend/node_modules/
+backend/coverage/
+backend/.rspec_status
+backend/vendor/bundle/
+
+# --- Node / React (frontend) ---
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/coverage/
+
+# --- React Native / Expo (mobile) ---
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/*.jks
+mobile/*.p8
+mobile/*.p12
+mobile/*.key
+mobile/*.mobileprovision
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+Thumbs.db
