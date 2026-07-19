@@ -70,6 +70,16 @@ RSpec.describe "Api::Users", type: :request do
       expect(User.find_by(email: "jane@example.com").role.name).to eq("dispatcher")
     end
 
+    it "logs an audit entry stamped with the acting admin" do
+      post "/api/users", params: valid_params, headers: auth_headers(admin)
+
+      user = User.find_by(email: "jane@example.com")
+      log = AuditLog.for_resource(user).sole
+      expect(log.action).to eq("user_created")
+      expect(log.user).to eq(admin)
+      expect(log.after_state["role"]).to eq("dispatcher")
+    end
+
     it "forbids a dispatcher from creating a user" do
       post "/api/users", params: valid_params, headers: auth_headers(dispatcher)
 
@@ -111,6 +121,16 @@ RSpec.describe "Api::Users", type: :request do
 
       expect(user.reload.password_digest).to eq(original_digest)
     end
+
+    it "logs an audit entry with before/after name" do
+      user = create(:user, :dispatcher, name: "Original")
+
+      put "/api/users/#{user.id}", params: { name: "Updated" }, headers: auth_headers(admin)
+
+      log = AuditLog.for_resource(user).find_by(action: "user_updated")
+      expect(log.before_state["name"]).to eq("Original")
+      expect(log.after_state["name"]).to eq("Updated")
+    end
   end
 
   describe "DELETE /api/users/:id" do
@@ -121,6 +141,16 @@ RSpec.describe "Api::Users", type: :request do
 
       expect(response).to have_http_status(:no_content)
       expect(User.find(user.id).active).to be false
+    end
+
+    it "logs an audit entry for the deactivation" do
+      user = create(:user, :dispatcher)
+
+      delete "/api/users/#{user.id}", headers: auth_headers(admin)
+
+      log = AuditLog.for_resource(user).find_by(action: "user_deactivated")
+      expect(log.before_state["active"]).to be true
+      expect(log.after_state["active"]).to be false
     end
   end
 end

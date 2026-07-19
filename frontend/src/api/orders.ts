@@ -96,3 +96,17 @@ export async function assignDriver(id: number, driverId: number | null): Promise
 export async function deleteOrder(id: number): Promise<void> {
   await apiClient.delete(`/orders/${id}`);
 }
+
+export interface OrderTimelineEvent {
+  id: number;
+  action: string;
+  user_name: string | null;
+  before_state: Record<string, unknown> | null;
+  after_state: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export async function fetchOrderTimeline(id: number): Promise<OrderTimelineEvent[]> {
+  const { data } = await apiClient.get<{ events: OrderTimelineEvent[] }>(`/orders/${id}/timeline`);
+  return data.events;
+}

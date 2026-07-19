@@ -109,6 +109,40 @@ RSpec.describe Order, type: :model do
     end
   end
 
+  describe "audit trail" do
+    let(:customer) { create(:customer) }
+    let(:creator) { create(:user, :customer) }
+
+    it "logs an order_created entry when the order is created" do
+      order = create(:order, customer: customer, created_by: creator)
+
+      log = AuditLog.for_resource(order).sole
+      expect(log.action).to eq("order_created")
+      expect(log.after_state["status"]).to eq("pending")
+    end
+
+    it "logs a driver_assigned entry with before/after driver_id" do
+      order = create(:order, customer: customer, created_by: creator)
+      driver = create(:driver)
+
+      order.update!(driver: driver)
+
+      log = AuditLog.for_resource(order).find_by(action: "driver_assigned")
+      expect(log.before_state["driver_id"]).to be_nil
+      expect(log.after_state["driver_id"]).to eq(driver.id)
+    end
+
+    it "logs a status_change entry with before/after status" do
+      order = create(:order, customer: customer, created_by: creator)
+
+      order.transition_to!("assigned")
+
+      log = AuditLog.for_resource(order).find_by(action: "status_change")
+      expect(log.before_state["status"]).to eq("pending")
+      expect(log.after_state["status"]).to eq("assigned")
+    end
+  end
+
   describe ".overdue" do
     it "includes only open orders past their estimate" do
       overdue = create(:order, customer: create(:customer), estimated_delivery_at: 1.hour.ago)

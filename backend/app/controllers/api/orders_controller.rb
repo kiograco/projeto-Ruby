@@ -1,7 +1,7 @@
 module Api
   class OrdersController < ApplicationController
     before_action :authenticate_user!
-    before_action :set_order, only: [ :show, :update, :destroy ]
+    before_action :set_order, only: [ :show, :update, :destroy, :timeline ]
 
     def index
       authorize Order
@@ -55,6 +55,12 @@ module Api
       authorize @order
       @order.destroy!
       head :no_content
+    end
+
+    def timeline
+      authorize @order, :show?
+      logs = AuditLog.for_resource(@order).recent_first
+      render json: { events: logs.map { |log| AuditLogSerializer.new(log).as_json } }
     end
 
     private

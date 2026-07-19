@@ -18,7 +18,11 @@ Rails.application.routes.draw do
     resources :customers
     resources :vehicles
     resources :drivers
-    resources :orders
+    resources :orders do
+      member do
+        get :timeline
+      end
+    end
 
     post "tracking/location", to: "tracking#create"
     get "tracking/history/:order_id", to: "tracking#history"

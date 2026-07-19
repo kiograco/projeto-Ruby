@@ -166,6 +166,38 @@ RSpec.describe "Api::Orders", type: :request do
     end
   end
 
+  describe "GET /api/orders/:id/timeline" do
+    it "returns audit events for admin" do
+      order = create(:order, customer: customer)
+      order.transition_to!("assigned")
+
+      get "/api/orders/#{order.id}/timeline", headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:ok)
+      actions = JSON.parse(response.body)["events"].map { |e| e["action"] }
+      expect(actions).to contain_exactly("order_created", "status_change")
+    end
+
+    it "orders events newest first" do
+      order = create(:order, customer: customer)
+      order.transition_to!("assigned")
+
+      get "/api/orders/#{order.id}/timeline", headers: auth_headers(admin)
+
+      actions = JSON.parse(response.body)["events"].map { |e| e["action"] }
+      expect(actions.first).to eq("status_change")
+    end
+
+    it "forbids a driver not assigned to the order" do
+      order = create(:order, customer: customer)
+      other_driver = create(:driver)
+
+      get "/api/orders/#{order.id}/timeline", headers: auth_headers(other_driver.user)
+
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
   describe "DELETE /api/orders/:id" do
     it "allows admin to delete an order" do
       order = create(:order, customer: customer)

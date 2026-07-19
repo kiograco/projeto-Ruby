@@ -51,7 +51,10 @@ class Order < ApplicationRecord
   before_validation :compute_total_price_from_items, on: :create
 
   after_create :notify_order_created
+  after_create :audit_creation
   after_update :notify_driver_assigned, if: -> { saved_change_to_driver_id? && driver_id.present? }
+  after_update :audit_driver_assignment, if: -> { saved_change_to_driver_id? && driver_id.present? }
+  after_update :audit_status_change, if: :saved_change_to_status?
 
   def transition_to!(new_status)
     new_status = new_status.to_s
@@ -92,5 +95,23 @@ class Order < ApplicationRecord
     return unless event
 
     OrderEventNotifier.notify(self, event, recipients: [ created_by ])
+  end
+
+  def audit_creation
+    AuditLogger.log(action: "order_created", resource: self, after: audit_snapshot)
+  end
+
+  def audit_driver_assignment
+    was, now = saved_change_to_driver_id
+    AuditLogger.log(action: "driver_assigned", resource: self, before: { driver_id: was }, after: { driver_id: now })
+  end
+
+  def audit_status_change
+    was, now = saved_change_to_status
+    AuditLogger.log(action: "status_change", resource: self, before: { status: was }, after: { status: now })
+  end
+
+  def audit_snapshot
+    { status: status, customer_id: customer_id, driver_id: driver_id, total_price: total_price.to_s }
   end
 end

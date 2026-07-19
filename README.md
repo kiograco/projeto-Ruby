@@ -64,6 +64,12 @@ infra/      nginx reverse-proxy config
   notifications with an unread count and pagination; `PUT /api/notifications/:id`
   and `POST /api/notifications/mark_all_read` mark them read. The dashboard header
   has a notification bell with an unread badge, dropdown list, and mark-as-read.
+- **Audit trail** — order creation, driver assignment, and status transitions, plus
+  admin actions on users (create/update/deactivate), are recorded to an `AuditLog`
+  table with the acting user, IP address, and a before/after snapshot (stamped via
+  an `ActiveSupport::CurrentAttributes` set during authentication). `GET
+  /api/orders/:id/timeline` returns an order's event history; the Orders page has a
+  "History" button per row that opens it as a timeline panel.
 
 ## Prerequisites
 
@@ -157,6 +163,8 @@ GET    /api/reports/performance   (?export=csv|pdf)
 GET    /api/notifications         (?unread=true)
 PUT    /api/notifications/:id     (marks read)
 POST   /api/notifications/mark_all_read
+
+GET    /api/orders/:id/timeline   (audit trail: created, driver assigned, status changes)
 ```
 
 ## Frontend
@@ -211,9 +219,6 @@ re-read of the spec against the codebase found these remaining gaps:
 - [ ] Scheduled jobs — `DeliveryDelayJob` (flags orders past `estimated_delivery_at`)
       and `CleanupLogsJob` (prunes old read notifications) exist and are tested, but
       nothing triggers them on a recurring schedule yet (no `sidekiq-cron` wiring)
-- [ ] Audit log (Section 18 lists it as a domain entity; nothing writes to it yet —
-      this is also what "Orders display complete history" in the acceptance criteria
-      implies beyond the tracking-point history that already exists)
 - [ ] File storage / attachments — proof of delivery photos, driver documents,
       invoices (Section 16); `ActiveStorage` is configured but unused
 - [ ] OpenAPI/Swagger documentation for the API (Section 29)

@@ -11,7 +11,10 @@ module Authenticatable
 
     payload = JwtService.decode(token)
     @current_user = User.active.find_by(id: payload["sub"])
-    render_unauthorized if @current_user.nil?
+    return render_unauthorized if @current_user.nil?
+
+    Current.user = @current_user
+    Current.ip_address = request.remote_ip
   rescue JwtService::DecodeError
     render_unauthorized
   end

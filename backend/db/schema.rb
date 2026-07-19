@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_200001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "postgis"
@@ -27,6 +27,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_200000) do
     t.string "street", null: false
     t.datetime "updated_at", null: false
     t.string "zip_code", null: false
+  end
+
+  create_table "audit_logs", force: :cascade do |t|
+    t.string "action", null: false
+    t.jsonb "after_state"
+    t.jsonb "before_state"
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.bigint "resource_id", null: false
+    t.string "resource_type", null: false
+    t.bigint "user_id"
+    t.index ["resource_type", "resource_id"], name: "index_audit_logs_on_resource_type_and_resource_id"
+    t.index ["user_id"], name: "index_audit_logs_on_user_id"
   end
 
   create_table "customers", force: :cascade do |t|
@@ -158,6 +171,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_200000) do
     t.index ["plate"], name: "index_vehicles_on_plate", unique: true
   end
 
+  add_foreign_key "audit_logs", "users"
   add_foreign_key "drivers", "users"
   add_foreign_key "drivers", "vehicles"
   add_foreign_key "notifications", "orders"

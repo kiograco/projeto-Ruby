@@ -28,6 +28,7 @@ module Api
       user = User.new(user_params.merge(role: role))
 
       if user.save
+        AuditLogger.log(action: "user_created", resource: user, after: audit_state(user))
         render json: UserSerializer.new(user).as_json, status: :created
       else
         render json: { errors: user.errors.full_messages }, status: :unprocessable_content
@@ -45,7 +46,10 @@ module Api
         attrs = attrs.merge(role: role)
       end
 
+      before_state = audit_state(@user)
+
       if @user.update(attrs)
+        AuditLogger.log(action: "user_updated", resource: @user, before: before_state, after: audit_state(@user))
         render json: UserSerializer.new(@user).as_json
       else
         render json: { errors: @user.errors.full_messages }, status: :unprocessable_content
@@ -56,7 +60,9 @@ module Api
     # historical orders (created_by), audit entries, etc.
     def destroy
       authorize @user
+      before_state = audit_state(@user)
       @user.update!(active: false)
+      AuditLogger.log(action: "user_deactivated", resource: @user, before: before_state, after: audit_state(@user))
       head :no_content
     end
 
@@ -77,6 +83,10 @@ module Api
       permitted = params.permit(:name, :email, :password, :password_confirmation, :active)
       permitted.delete(:password) if permitted[:password].blank?
       permitted
+    end
+
+    def audit_state(user)
+      { name: user.name, email: user.email, role: user.role&.name, active: user.active }
     end
   end
 end

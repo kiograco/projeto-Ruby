@@ -15,6 +15,7 @@ import {
 import { fetchDrivers } from "../api/drivers";
 import { useAuth } from "../contexts/AuthContext";
 import { OrderFormPanel } from "../components/orders/OrderFormPanel";
+import { OrderTimelinePanel } from "../components/orders/OrderTimelinePanel";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending: "Pending",
@@ -59,6 +60,7 @@ export function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [timelineOrderId, setTimelineOrderId] = useState<number | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["orders", page, statusFilter],
@@ -203,6 +205,13 @@ export function OrdersPage() {
                         )}
                       </td>
                       <td className="space-x-2 px-4 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setTimelineOrderId(order.id)}
+                          className="text-gray-500 hover:underline"
+                        >
+                          History
+                        </button>
                         {canUpdateStatus &&
                           nextStatuses.map((next) => (
                             <button
@@ -274,6 +283,10 @@ export function OrdersPage() {
             setFormErrors([]);
           }}
         />
+      )}
+
+      {timelineOrderId !== null && (
+        <OrderTimelinePanel orderId={timelineOrderId} onClose={() => setTimelineOrderId(null)} />
       )}
     </div>
   );
