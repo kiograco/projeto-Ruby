@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCustomers } from "../../api/customers";
 import type { AddressInput, OrderCreateInput, OrderItemInput } from "../../api/orders";
+import { lookupCep } from "../../api/viacep";
 
 interface OrderFormPanelProps {
   errors: string[];
@@ -31,13 +32,56 @@ function AddressFields({
   value: AddressInput;
   onChange: (value: AddressInput) => void;
 }) {
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
   function set<K extends keyof AddressInput>(key: K, fieldValue: AddressInput[K]) {
     onChange({ ...value, [key]: fieldValue });
+  }
+
+  async function handleZipBlur() {
+    const digits = value.zip_code.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+
+    setIsLookingUp(true);
+    setLookupError(null);
+    try {
+      const result = await lookupCep(digits);
+      if (!result) {
+        setLookupError("CEP not found.");
+        return;
+      }
+      onChange({
+        ...value,
+        street: result.logradouro || value.street,
+        neighborhood: result.bairro || value.neighborhood,
+        city: result.localidade,
+        state: result.uf,
+      });
+    } catch {
+      setLookupError("Could not look up this CEP right now.");
+    } finally {
+      setIsLookingUp(false);
+    }
   }
 
   return (
     <fieldset className="space-y-2 rounded border border-gray-200 p-3">
       <legend className="px-1 text-sm font-medium text-gray-700">{title}</legend>
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          placeholder="ZIP code"
+          required
+          value={value.zip_code}
+          onChange={(event) => set("zip_code", event.target.value)}
+          onBlur={handleZipBlur}
+          className="rounded border border-gray-300 px-2 py-1.5 text-sm"
+        />
+        <div className="flex items-center text-xs">
+          {isLookingUp && <span className="text-gray-400">Looking up CEP…</span>}
+          {lookupError && <span className="text-red-600">{lookupError}</span>}
+        </div>
+      </div>
       <div className="grid grid-cols-3 gap-2">
         <input
           placeholder="Street"
@@ -54,7 +98,7 @@ function AddressFields({
           className="rounded border border-gray-300 px-2 py-1.5 text-sm"
         />
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <input
           placeholder="Neighborhood"
           required
@@ -62,15 +106,6 @@ function AddressFields({
           onChange={(event) => set("neighborhood", event.target.value)}
           className="rounded border border-gray-300 px-2 py-1.5 text-sm"
         />
-        <input
-          placeholder="ZIP code"
-          required
-          value={value.zip_code}
-          onChange={(event) => set("zip_code", event.target.value)}
-          className="rounded border border-gray-300 px-2 py-1.5 text-sm"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
         <input
           placeholder="City"
           required
