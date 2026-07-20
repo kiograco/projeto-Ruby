@@ -35,7 +35,7 @@ export interface Address {
   longitude: number | null;
 }
 
-export type AddressInput = Omit<Address, "id" | "latitude" | "longitude">;
+export type AddressInput = Omit<Address, "id">;
 
 export interface OrderItem {
   id: number;

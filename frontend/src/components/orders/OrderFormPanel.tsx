@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCustomers } from "../../api/customers";
 import type { AddressInput, OrderCreateInput, OrderItemInput } from "../../api/orders";
 import { lookupCep } from "../../api/viacep";
+import { geocodeAddress } from "../../api/geocoding";
 
 interface OrderFormPanelProps {
   errors: string[];
@@ -19,6 +20,8 @@ const EMPTY_ADDRESS: AddressInput = {
   city: "",
   state: "",
   zip_code: "",
+  latitude: null,
+  longitude: null,
 };
 
 const EMPTY_ITEM: OrderItemInput = { description: "", quantity: 1, unit_price: 0 };
@@ -30,13 +33,14 @@ function AddressFields({
 }: {
   title: string;
   value: AddressInput;
-  onChange: (value: AddressInput) => void;
+  onChange: Dispatch<SetStateAction<AddressInput>>;
 }) {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   function set<K extends keyof AddressInput>(key: K, fieldValue: AddressInput[K]) {
-    onChange({ ...value, [key]: fieldValue });
+    onChange((prev) => ({ ...prev, [key]: fieldValue, latitude: null, longitude: null }));
   }
 
   async function handleZipBlur() {
@@ -51,17 +55,29 @@ function AddressFields({
         setLookupError("CEP not found.");
         return;
       }
-      onChange({
-        ...value,
-        street: result.logradouro || value.street,
-        neighborhood: result.bairro || value.neighborhood,
+
+      onChange((prev) => ({
+        ...prev,
+        street: result.logradouro || prev.street,
+        neighborhood: result.bairro || prev.neighborhood,
         city: result.localidade,
         state: result.uf,
-      });
+        latitude: null,
+        longitude: null,
+      }));
+      setIsLookingUp(false);
+
+      setIsGeocoding(true);
+      const geocodeQuery = [result.logradouro, result.bairro, result.localidade, result.uf, "Brazil"]
+        .filter(Boolean)
+        .join(", ");
+      const coords = await geocodeAddress(geocodeQuery);
+      onChange((prev) => ({ ...prev, latitude: coords?.latitude ?? null, longitude: coords?.longitude ?? null }));
     } catch {
       setLookupError("Could not look up this CEP right now.");
     } finally {
       setIsLookingUp(false);
+      setIsGeocoding(false);
     }
   }
 
@@ -79,7 +95,11 @@ function AddressFields({
         />
         <div className="flex items-center text-xs">
           {isLookingUp && <span className="text-gray-400">Looking up CEP…</span>}
-          {lookupError && <span className="text-red-600">{lookupError}</span>}
+          {!isLookingUp && isGeocoding && <span className="text-gray-400">Locating on map…</span>}
+          {!isLookingUp && !isGeocoding && lookupError && <span className="text-red-600">{lookupError}</span>}
+          {!isLookingUp && !isGeocoding && !lookupError && value.latitude != null && (
+            <span className="text-green-600">📍 Location found</span>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2">

@@ -39,6 +39,10 @@ infra/      nginx reverse-proxy config
   transitions are rejected), and role-scoped access: admin/dispatcher manage everything,
   drivers see and progress only their assigned orders, customer-role users can create
   orders. Dashboard page filters by status, assigns drivers, and drives status transitions.
+  The order form looks up each address's CEP against ViaCEP to fill in street/neighborhood/
+  city/state, then geocodes the resulting address via Nominatim (OpenStreetMap) to save
+  latitude/longitude — both run client-side with no API key, so pickup/delivery addresses
+  get map-ready coordinates without anyone typing them in by hand.
   A proof-of-delivery file can be attached per order (`POST /api/orders/:id/proof_of_delivery`,
   Active Storage) by the assigned driver or admin/dispatcher, uploaded and viewed from the
   order's History panel. Drivers can also browse unassigned pending orders
